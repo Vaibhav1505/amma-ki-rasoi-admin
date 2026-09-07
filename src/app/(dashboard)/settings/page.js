@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   const [business, setBusiness] = useState({
     name: 'Amma Ki Rasoi',
@@ -31,9 +34,39 @@ export default function SettingsPage() {
     whatsappPhoneId: '',
   });
 
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          const { _id, createdAt, updatedAt, __v, ...rest } = data;
+          setBusiness(prev => ({ ...prev, ...rest }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
+
   const handleSave = async () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(business),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save settings');
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid var(--border-cream)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem' };
@@ -44,10 +77,12 @@ export default function SettingsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <h1 className="page-title" style={{ margin: 0 }}>⚙️ Settings</h1>
-        <button onClick={handleSave} className="btn btn-primary">
-          {saved ? '✅ Saved!' : 'Save Changes'}
+        <button onClick={handleSave} disabled={saving || !loaded} className="btn btn-primary">
+          {saving ? 'Saving...' : saved ? '✅ Saved!' : 'Save Changes'}
         </button>
       </div>
+
+      {error && <div style={{ padding: '12px', backgroundColor: '#FEE2E2', color: 'var(--danger-red)', marginBottom: '24px', borderRadius: '6px' }}>{error}</div>}
 
       <div style={{ display: 'flex', gap: '32px' }}>
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -55,6 +90,9 @@ export default function SettingsPage() {
           {/* Business Profile */}
           <div className="card">
             <h2 className="section-title" style={{ marginTop: 0 }}>🏪 Business Profile</h2>
+            <div className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '20px', marginTop: '-12px' }}>
+              This information appears on invoices and shipping labels.
+            </div>
 
             <div style={sectionStyle}>Brand</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -145,15 +183,15 @@ export default function SettingsPage() {
           <div className="card">
             <h2 className="section-title" style={{ marginTop: 0 }}>🚀 ShipRocket</h2>
             <div style={{ padding: '8px 12px', backgroundColor: '#FFF5F0', borderRadius: '6px', marginBottom: '16px', fontSize: '0.8rem', color: 'var(--primary-terracotta)' }}>
-              ⚠️ Not connected — add credentials below
+              ⚠️ Configure via SHIPROCKET_EMAIL / SHIPROCKET_PASSWORD in .env.local
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Email</label>
-              <input type="email" value={integrations.shiprocketEmail} onChange={e => setIntegrations(p => ({...p, shiprocketEmail: e.target.value}))} style={inputStyle} placeholder="your@shiprocket.com" />
+              <input type="email" value={integrations.shiprocketEmail} onChange={e => setIntegrations(p => ({...p, shiprocketEmail: e.target.value}))} style={inputStyle} placeholder="your@shiprocket.com" disabled />
             </div>
             <div>
               <label style={labelStyle}>Password</label>
-              <input type="password" value={integrations.shiprocketPassword} onChange={e => setIntegrations(p => ({...p, shiprocketPassword: e.target.value}))} style={inputStyle} placeholder="••••••••" />
+              <input type="password" value={integrations.shiprocketPassword} onChange={e => setIntegrations(p => ({...p, shiprocketPassword: e.target.value}))} style={inputStyle} placeholder="••••••••" disabled />
             </div>
           </div>
 
@@ -161,11 +199,11 @@ export default function SettingsPage() {
           <div className="card">
             <h2 className="section-title" style={{ marginTop: 0 }}>💬 WhatsApp API</h2>
             <div style={{ padding: '8px 12px', backgroundColor: '#FFF5F0', borderRadius: '6px', marginBottom: '16px', fontSize: '0.8rem', color: 'var(--primary-terracotta)' }}>
-              ⚠️ Not connected — add credentials below
+              ⚠️ Configure via WHATSAPP_* variables in .env.local
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Provider</label>
-              <select value={integrations.whatsappProvider} onChange={e => setIntegrations(p => ({...p, whatsappProvider: e.target.value}))} style={inputStyle}>
+              <select value={integrations.whatsappProvider} onChange={e => setIntegrations(p => ({...p, whatsappProvider: e.target.value}))} style={inputStyle} disabled>
                 <option value="interakt">Interakt (Recommended for India)</option>
                 <option value="meta">Meta Cloud API</option>
                 <option value="wati">WATI</option>
@@ -173,14 +211,8 @@ export default function SettingsPage() {
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>API Key</label>
-              <input type="password" value={integrations.whatsappApiKey} onChange={e => setIntegrations(p => ({...p, whatsappApiKey: e.target.value}))} style={inputStyle} placeholder="••••••••••••" />
+              <input type="password" value={integrations.whatsappApiKey} onChange={e => setIntegrations(p => ({...p, whatsappApiKey: e.target.value}))} style={inputStyle} placeholder="••••••••••••" disabled />
             </div>
-            {integrations.whatsappProvider === 'meta' && (
-              <div>
-                <label style={labelStyle}>Phone Number ID</label>
-                <input value={integrations.whatsappPhoneId} onChange={e => setIntegrations(p => ({...p, whatsappPhoneId: e.target.value}))} style={inputStyle} placeholder="From Meta Business Suite" />
-              </div>
-            )}
           </div>
 
           {/* Printer */}

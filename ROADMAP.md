@@ -34,16 +34,20 @@ lands; don't let it drift from reality.
 Note: items added via the "Custom item" option (not linked to a real product) are
 intentionally not stock-tracked — there's nothing in inventory to decrement.
 
-## Phase 3 — Invoicing & documents
-- [ ] Sequential, invoice-specific numbering (separate from order ID)
-- [ ] Pull business details (address, FSSAI/GST) from Settings into invoice/label templates instead of hardcoded placeholder text
-- [ ] Persist an invoice record per order (audit trail / reprint history)
-- [ ] Real scannable barcode on shipping labels
+## Phase 3 — Invoicing & documents ✅ done
+- [x] Sequential, invoice-specific numbering (`Invoice` model + `INV-0001` style, independent of order ID)
+- [x] Business details (name, address, GSTIN, FSSAI, UPI) now come from a persisted `BusinessSettings` singleton, editable on the Settings page, instead of hardcoded placeholder text
+- [x] Invoice record persisted per order (`getOrCreateInvoice` — stable number across reprints, doubles as an audit trail)
+- [x] Real scannable Code128 barcode on shipping labels (via `bwip-js`, rendered server-side as a PNG data URI — no client JS/canvas needed)
 
-## Phase 4 — Customers (CRM)
-- [ ] Customer profile editing independent of orders (tags like VIP / do-not-COD)
-- [ ] Wire the "Export CSV" button
-- [ ] Duplicate-customer merge
+Note: Settings page now persists the Business Profile section to MongoDB.
+ShipRocket/WhatsApp credential fields and Printer prefs are still
+env-var-only / cosmetic (disabled in the UI) — wiring those up is Phase 9.
+
+## Phase 4 — Customers (CRM) ✅ done
+- [x] New `Customer` model (keyed by phone) holds CRM data that has no home on an order — tags (VIP, No COD, Blocked, Wholesale, or custom) and an internal note, editable from the customer profile page. Auto-created whenever an order is placed/edited so every customer gets a record without extra admin work.
+- [x] "Export CSV" now downloads a real CSV of all customers (name, phone, email, orders, lifetime value, last order, tags, address) via `/api/customers/export`
+- [x] Duplicate-customer detection + merge: customers list groups phone numbers by their last-10-digits, flags likely duplicates (same person, differently formatted number), and a "Merge into selected" action reassigns their orders and unions tags/notes into one canonical phone (`/api/customers/merge`)
 
 ## Phase 5 — Shipping & logistics
 - [ ] Turn on real ShipRocket integration (scaffolded in `src/lib/shiprocket.js`)
@@ -67,9 +71,10 @@ intentionally not stock-tracked — there's nothing in inventory to decrement.
 - [ ] Wire CSV/PDF export
 - [ ] Revenue-over-time trend
 
-## Phase 9 — Settings
-- [ ] Persist Settings (business profile, integration credentials, printer prefs) to the database
-- [ ] Feed persisted settings into invoices/labels/integrations instead of `.env.local` only
+## Phase 9 — Settings — partially done (pulled forward to unblock Phase 3)
+- [x] Persist business profile to the database (`BusinessSettings` model + `/api/settings`)
+- [x] Feed persisted business profile into invoices/labels
+- [ ] Persist integration credentials (ShipRocket/WhatsApp) and printer prefs — currently still `.env.local`-only / cosmetic by design (secrets shouldn't move to a web-editable form without more thought on access control)
 
 ## Phase 10 — Security & multi-user
 - [ ] Real `User` model with roles, if more than one person will use this

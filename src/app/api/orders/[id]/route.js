@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/mongodb';
 import Order from '@/lib/models/Order';
 import { adjustStock } from '@/lib/inventory';
+import { ensureCustomer } from '@/lib/customers';
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 
@@ -49,6 +50,8 @@ export async function PUT(request, { params }) {
       },
       { new: true, runValidators: true }
     );
+
+    await ensureCustomer(order.customerPhone);
 
     // Reconcile stock for any change in quantity of a product-linked item
     // (e.g. quantity 2 -> 5 needs to pull 3 more units from inventory)

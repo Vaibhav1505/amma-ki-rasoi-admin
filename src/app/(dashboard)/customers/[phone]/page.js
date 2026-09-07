@@ -1,6 +1,8 @@
 import dbConnect from '@/lib/mongodb';
 import Order from '@/lib/models/Order';
+import Customer from '@/lib/models/Customer';
 import Link from 'next/link';
+import CustomerCrmEditor from '@/components/CustomerCrmEditor';
 
 
 export const metadata = {
@@ -14,6 +16,7 @@ export default async function CustomerProfilePage({ params }) {
   await dbConnect();
 
   const orders = await Order.find({ customerPhone: phone }).sort({ createdAt: -1 }).lean();
+  const customerDoc = await Customer.findOne({ phone }).lean();
 
   if (orders.length === 0) {
     return (
@@ -117,6 +120,8 @@ export default async function CustomerProfilePage({ params }) {
               {orders[0].shippingAddress || 'No address saved.'}
             </div>
           </div>
+
+          <CustomerCrmEditor phone={phone} initialTags={customerDoc?.tags} initialNote={customerDoc?.internalNote} />
         </div>
 
         {/* Right: Order History */}

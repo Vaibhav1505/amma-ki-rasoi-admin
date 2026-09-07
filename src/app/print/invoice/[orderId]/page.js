@@ -1,13 +1,15 @@
 import { notFound } from 'next/navigation';
 import dbConnect from '../../../../lib/mongodb';
 import Order from '../../../../lib/models/Order';
+import { getOrCreateInvoice } from '../../../../lib/invoicing';
+import { getBusinessSettings } from '../../../../lib/settings';
 import Link from 'next/link';
 
 export default async function InvoicePrintPage({ params }) {
   const resolvedParams = await params;
-  
+
   await dbConnect();
-  
+
   let order;
   try {
     order = await Order.findById(resolvedParams.orderId).lean();
@@ -18,6 +20,16 @@ export default async function InvoicePrintPage({ params }) {
   if (!order) {
     notFound();
   }
+
+  const [invoice, business] = await Promise.all([
+    getOrCreateInvoice(order._id),
+    getBusinessSettings(),
+  ]);
+
+  const businessAddressLine = [business.address, [business.city, business.state, business.pincode].filter(Boolean).join(', ')]
+    .filter(Boolean)
+    .join(' — ');
+  const businessContactLine = [business.phone, business.email].filter(Boolean).join(' | ');
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', backgroundColor: 'white' }}>
@@ -31,14 +43,18 @@ export default async function InvoicePrintPage({ params }) {
       <div id="invoice-area" style={{ fontFamily: 'var(--font-ui)', color: '#000' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '24px', marginBottom: '32px' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0' }}>Amma Ki Rasoi</h1>
-            <div style={{ fontSize: '14px', color: '#555' }}>Authentic Handmade Pickles & Spices</div>
-            <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }}>contact@ammakirasoi.com | +91 98765 43210</div>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0' }}>{business.name}</h1>
+            {business.tagline && <div style={{ fontSize: '14px', color: '#555' }}>{business.tagline}</div>}
+            {businessAddressLine && <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>{businessAddressLine}</div>}
+            {businessContactLine && <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }}>{businessContactLine}</div>}
+            {business.gstNumber && <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>GSTIN: {business.gstNumber}</div>}
+            {business.fssaiNumber && <div style={{ fontSize: '13px', color: '#555', marginTop: '2px' }}>FSSAI Lic. No: {business.fssaiNumber}</div>}
           </div>
           <div style={{ textAlign: 'right' }}>
             <h2 style={{ fontSize: '28px', color: '#C1440E', margin: '0 0 8px 0', textTransform: 'uppercase' }}>INVOICE</h2>
-            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Order #{order.orderId}</div>
-            <div style={{ fontSize: '14px' }}>Date: {new Date(order.createdAt).toLocaleDateString()}</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Invoice #: {invoice.invoiceNumber}</div>
+            <div style={{ fontSize: '14px' }}>Order #: {order.orderId}</div>
+            <div style={{ fontSize: '14px' }}>Date: {new Date(invoice.createdAt).toLocaleDateString()}</div>
           </div>
         </div>
 
@@ -95,12 +111,18 @@ export default async function InvoicePrintPage({ params }) {
           </div>
         </div>
 
+        {business.upiId && (
+          <div style={{ marginBottom: '32px', fontSize: '13px', color: '#555' }}>
+            Pay via UPI: <strong>{business.upiId}</strong>
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', color: '#666', fontSize: '14px', borderTop: '1px solid #ccc', paddingTop: '24px' }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#C1440E' }}>Thank you for bringing Amma's love to your kitchen!</p>
           <p style={{ margin: 0 }}>This is a computer generated invoice and does not require a physical signature.</p>
         </div>
       </div>
-      
+
       {/* Client-side script to hook up the print button */}
       <script dangerouslySetInnerHTML={{ __html: `
         document.querySelector('button[type="button"]').addEventListener('click', function() {

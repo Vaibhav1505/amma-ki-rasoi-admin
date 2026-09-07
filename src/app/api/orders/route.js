@@ -2,6 +2,7 @@ import dbConnect from '../../../lib/mongodb';
 import Order from '../../../lib/models/Order';
 import Counter from '../../../lib/models/Counter';
 import { applyOrderStockChange } from '../../../lib/inventory';
+import { ensureCustomer } from '../../../lib/customers';
 import { NextResponse } from 'next/server';
 import { requireAuth } from '../../../lib/auth';
 
@@ -24,6 +25,7 @@ export async function POST(request) {
     const order = await Order.create({ ...body, orderId });
 
     await applyOrderStockChange(order, { direction: -1, reason: 'order_placed' });
+    await ensureCustomer(order.customerPhone);
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
