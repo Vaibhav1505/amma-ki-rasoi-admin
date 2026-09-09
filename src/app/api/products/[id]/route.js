@@ -24,7 +24,9 @@ export async function PUT(request, { params }) {
       { new: true, runValidators: true }
     );
 
-    const stockChange = product.stock - before.stock;
+    const beforeStock = before.stockGrams ?? 0;
+    const afterStock = product.stockGrams ?? 0;
+    const stockChange = afterStock - beforeStock;
     if (stockChange !== 0) {
       await StockMovement.create({ product: product._id, change: stockChange, reason: 'manual_adjustment' });
     }

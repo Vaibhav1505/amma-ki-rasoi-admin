@@ -2,6 +2,10 @@ import dbConnect from '../../lib/mongodb';
 import Order from '../../lib/models/Order';
 import Product from '../../lib/models/Product';
 import Link from 'next/link';
+import StatusBadge from '@/components/StatusBadge';
+import { Package, Truck, IndianRupee, AlertTriangle, Zap, CheckCircle2, Plus, Printer, Megaphone } from 'lucide-react';
+import { formatKg } from '../../lib/weight';
+import { LOW_STOCK_THRESHOLD_GRAMS } from '../../lib/inventory';
 
 export const metadata = {
   title: 'Dashboard | Amma Ki Rasoi Admin'
@@ -11,15 +15,11 @@ const PIPELINE_STATUSES = ['pending', 'confirmed', 'packing', 'shipped', 'delive
 const TO_SHIP_STATUSES = ['confirmed', 'packing'];
 const OVERDUE_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
-function statusLabel(s) {
-  return s === 'cod_pending' ? 'COD Pending' : s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 export default async function Home() {
   await dbConnect();
 
   const orders = await Order.find().sort({ createdAt: -1 }).lean();
-  const products = await Product.find().sort({ stock: 1 }).lean();
+  const products = await Product.find().sort({ stockGrams: 1 }).lean();
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -31,7 +31,7 @@ export default async function Home() {
   const toShipOrders = orders.filter(o => TO_SHIP_STATUSES.includes(o.status));
   const overdueOrders = toShipOrders.filter(o => new Date(o.createdAt) < overdueBefore);
 
-  const lowStockProducts = products.filter(p => p.stock < 10);
+  const lowStockProducts = products.filter(p => (p.stockGrams ?? 0) < LOW_STOCK_THRESHOLD_GRAMS);
 
   const pipelineCounts = Object.fromEntries(
     PIPELINE_STATUSES.map(s => [s, orders.filter(o => o.status === s).length])
@@ -46,6 +46,7 @@ export default async function Home() {
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0];
   const packingCount = orders.filter(o => o.status === 'packing').length;
   const lowestStockProduct = lowStockProducts[0];
+  const lowestStockProductStock = lowestStockProduct?.stockGrams ?? 0;
 
   const attentionItems = [];
   if (oldestOverdue) {
@@ -76,8 +77,8 @@ export default async function Home() {
     attentionItems.push({
       key: 'low-stock',
       color: 'var(--primary-terracotta)',
-      title: <><strong style={{ color: 'var(--primary-terracotta)' }}>{lowestStockProduct.name}</strong> — Only {lowestStockProduct.stock} left in stock</>,
-      subtitle: lowestStockProduct.stock === 0 ? 'Out of stock — restock as soon as possible.' : 'Running low — consider restocking soon.',
+      title: <><strong style={{ color: 'var(--primary-terracotta)' }}>{lowestStockProduct.name}</strong> — Only {formatKg(lowestStockProductStock)}kg left in stock</>,
+      subtitle: lowestStockProductStock === 0 ? 'Out of stock — restock as soon as possible.' : 'Running low — consider restocking soon.',
       actions: <Link href={`/products/${lowestStockProduct._id}/edit`} className="btn">Update Stock</Link>,
     });
   }
@@ -101,24 +102,24 @@ export default async function Home() {
       {/* TODAY AT A GLANCE - Top KPI Cards */}
       <div className="grid-4" style={{ marginBottom: '32px' }}>
         <div className="card">
-          <div className="kpi-title">📦 New Orders Today</div>
+          <div className="kpi-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Package size={14} strokeWidth={2} /> New Orders Today</div>
           <div className="kpi-value">{ordersToday.length}</div>
           <div className="kpi-trend">since midnight</div>
         </div>
         <div className="card">
-          <div className="kpi-title">🚚 To Ship</div>
+          <div className="kpi-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Truck size={14} strokeWidth={2} /> To Ship</div>
           <div className="kpi-value">{toShipOrders.length}</div>
           <div className="kpi-trend" style={{ color: overdueOrders.length > 0 ? 'var(--danger-red)' : 'var(--text-muted)' }}>
             {overdueOrders.length > 0 ? `${overdueOrders.length} overdue` : 'all on track'}
           </div>
         </div>
         <div className="card">
-          <div className="kpi-title">💰 Today's Rev</div>
+          <div className="kpi-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IndianRupee size={14} strokeWidth={2} /> Today's Rev</div>
           <div className="kpi-value">₹{todaysRevenue.toLocaleString('en-IN')}</div>
           <div className="kpi-trend">{ordersToday.length} order{ordersToday.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="card">
-          <div className="kpi-title">⚠️ Low Stock</div>
+          <div className="kpi-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} strokeWidth={2} /> Low Stock</div>
           <div className="kpi-value">{lowStockProducts.length} item{lowStockProducts.length !== 1 ? 's' : ''}</div>
           <Link href="/products" className="kpi-trend" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>View →</Link>
         </div>
@@ -129,9 +130,13 @@ export default async function Home() {
         <div style={{ flex: '2' }}>
           {/* ACTION REQUIRED - Priority Queue */}
           <div className="card" style={{ marginBottom: '32px' }}>
-            <h2 className="section-title" style={{ marginTop: 0 }}>⚡ Needs Your Attention Right Now</h2>
+            <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={18} strokeWidth={2} /> Needs Your Attention Right Now
+            </h2>
             {attentionItems.length === 0 ? (
-              <div className="text-muted">✅ All caught up — nothing urgent right now.</div>
+              <div className="text-muted" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} strokeWidth={2} /> All caught up — nothing urgent right now.
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {attentionItems.map((item, idx) => (
@@ -177,7 +182,7 @@ export default async function Home() {
                     <td>{order.customerName}</td>
                     <td>{order.items.reduce((acc, i) => acc + i.quantity, 0)} items</td>
                     <td className="data-font">₹{order.totalAmount}</td>
-                    <td><span className={`badge badge-${order.status}`}>{statusLabel(order.status)}</span></td>
+                    <td><StatusBadge status={order.status} /></td>
                     <td><Link href={`/orders/${order._id}`} className="btn">View →</Link></td>
                   </tr>
                 ))
@@ -197,7 +202,7 @@ export default async function Home() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {PIPELINE_STATUSES.map(status => (
                 <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className={`badge badge-${status}`} style={{ width: '100px', textAlign: 'center' }}>{statusLabel(status)}</span>
+                  <StatusBadge status={status} style={{ width: '100px', justifyContent: 'center' }} />
                   <strong className="data-font" style={{ fontSize: '1.25rem' }}>{pipelineCounts[status]}</strong>
                 </div>
               ))}
@@ -208,10 +213,18 @@ export default async function Home() {
           <div className="card">
             <h2 className="section-title" style={{ marginTop: 0 }}>Quick Actions</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Link href="/orders/new" className="btn btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>+ New Order</Link>
-              <Link href="/print" className="btn" style={{ textAlign: 'center', textDecoration: 'none' }}>🖨️ Print Labels</Link>
-              <Link href="/products" className="btn" style={{ textAlign: 'center', textDecoration: 'none' }}>📦 Update Stock</Link>
-              <Link href="/marketing" className="btn" style={{ textAlign: 'center', textDecoration: 'none' }}>📣 Send Broadcast</Link>
+              <Link href="/orders/new" className="btn btn-primary" style={{ textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Plus size={16} strokeWidth={2} /> New Order
+              </Link>
+              <Link href="/print" className="btn" style={{ textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Printer size={16} strokeWidth={2} /> Print Labels
+              </Link>
+              <Link href="/products" className="btn" style={{ textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Package size={16} strokeWidth={2} /> Update Stock
+              </Link>
+              <Link href="/marketing" className="btn" style={{ textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Megaphone size={16} strokeWidth={2} /> Send Broadcast
+              </Link>
             </div>
           </div>
         </div>

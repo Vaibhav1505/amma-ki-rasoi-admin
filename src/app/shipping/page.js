@@ -1,7 +1,10 @@
 import dbConnect from '../../lib/mongodb';
 import Order from '../../lib/models/Order';
+import { isConfigured as isShipRocketConfigured } from '../../lib/shiprocket';
 import Link from 'next/link';
-import StatusUpdateButton from '@/components/StatusUpdateButton';
+import SchedulePickupButton from '@/components/SchedulePickupButton';
+import RefreshTrackingButton from '@/components/RefreshTrackingButton';
+import { Truck, AlertTriangle, Rocket, Printer, CheckCircle2, Coins, Circle } from 'lucide-react';
 
 export const metadata = {
   title: 'Shipping & Logistics | Amma Ki Rasoi Admin'
@@ -14,19 +17,23 @@ export default async function ShippingPage() {
 
   const readyToShip = await Order.find({ status: 'packing' }).sort({ createdAt: -1 }).lean();
   const inTransit   = await Order.find({ status: 'shipped' }).sort({ createdAt: -1 }).lean();
+  const shipRocketReady = isShipRocketConfigured();
+  const readyToShipIds = readyToShip.map(o => o._id.toString()).join(',');
 
   return (
     <div>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>🚚 Shipping & Logistics</h1>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><Truck size={22} strokeWidth={2} /> Shipping & Logistics</h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           {/* ShipRocket status banner */}
-          <div style={{ padding: '8px 16px', backgroundColor: '#FFFBEB', border: '1px solid #D4A017', borderRadius: '6px', fontSize: '0.8rem', color: '#92400E', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            ⚠️ ShipRocket not connected —
-            <Link href="/settings" style={{ color: 'var(--primary-terracotta)', fontWeight: '600' }}>Configure in Settings</Link>
-          </div>
-          <button className="btn btn-primary">🚀 Schedule Pickup</button>
+          {!shipRocketReady && (
+            <div style={{ padding: '8px 16px', backgroundColor: '#FFFBEB', border: '1px solid #D4A017', borderRadius: '6px', fontSize: '0.8rem', color: '#92400E', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <AlertTriangle size={14} strokeWidth={2} /> ShipRocket not connected —
+              <Link href="/settings" style={{ color: 'var(--primary-terracotta)', fontWeight: '600' }}>Configure in Settings</Link>
+            </div>
+          )}
+          {shipRocketReady && <SchedulePickupButton />}
         </div>
       </div>
 
@@ -35,8 +42,8 @@ export default async function ShippingPage() {
         <div className="card">
           <div className="kpi-title">Ready to Ship</div>
           <div className="kpi-value">{readyToShip.length}</div>
-          <div className="kpi-trend" style={{ color: readyToShip.length > 0 ? 'var(--danger-red)' : 'var(--text-muted)' }}>
-            {readyToShip.length > 0 ? 'Needs pickup ⚠️' : 'All clear ✅'}
+          <div className="kpi-trend" style={{ color: readyToShip.length > 0 ? 'var(--danger-red)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {readyToShip.length > 0 ? <><AlertTriangle size={13} strokeWidth={2} /> Needs pickup</> : <><CheckCircle2 size={13} strokeWidth={2} /> All clear</>}
           </div>
         </div>
         <div className="card">
@@ -53,13 +60,13 @@ export default async function ShippingPage() {
       {/* ShipRocket Couriers */}
       <div className="card" style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 className="section-title" style={{ margin: 0 }}>🚀 ShipRocket — Active Couriers</h2>
+          <h2 className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Rocket size={17} strokeWidth={2} /> ShipRocket — Active Couriers</h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Auto-select: Best rate (when connected)</span>
         </div>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {COURIERS.map(c => (
-            <div key={c} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-cream)', backgroundColor: 'white', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>
-              ⚪ {c}
+            <div key={c} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-cream)', backgroundColor: 'white', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Circle size={8} strokeWidth={2} fill="currentColor" /> {c}
             </div>
           ))}
         </div>
@@ -68,8 +75,14 @@ export default async function ShippingPage() {
       {/* Ready to Ship */}
       <div className="card" style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 className="section-title" style={{ margin: 0 }}>📦 Ready to Ship ({readyToShip.length})</h2>
-          <button className="btn">🖨️ Print All Labels</button>
+          <h2 className="section-title" style={{ margin: 0 }}>Ready to Ship ({readyToShip.length})</h2>
+          <Link
+            href={readyToShipIds ? `/print/labels/bulk?ids=${readyToShipIds}` : '#'}
+            className="btn"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', pointerEvents: readyToShipIds ? 'auto' : 'none', opacity: readyToShipIds ? 1 : 0.5 }}
+          >
+            <Printer size={14} strokeWidth={2} /> Print All Labels
+          </Link>
         </div>
         <table>
           <thead>
@@ -104,13 +117,15 @@ export default async function ShippingPage() {
                   </td>
                   <td className="data-font">{order.items?.length || 0} items</td>
                   <td>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: order.paymentMethod === 'COD' ? 'var(--warning-gold)' : 'var(--success-green)' }}>
-                      {order.paymentMethod === 'COD' ? '💰 COD' : '✅ Prepaid'}
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: order.paymentMethod === 'COD' ? 'var(--warning-gold)' : 'var(--success-green)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      {order.paymentMethod === 'COD' ? <><Coins size={13} strokeWidth={2} /> COD</> : <><CheckCircle2 size={13} strokeWidth={2} /> Prepaid</>}
                     </span>
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      <Link href={`/print/label/${order._id.toString()}`} className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>🖨️ Label</Link>
+                      <Link href={`/print/label/${order._id.toString()}`} className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Printer size={12} strokeWidth={2} /> Label
+                      </Link>
                       <Link href={`/orders/${order._id.toString()}`} className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>View</Link>
                     </div>
                   </td>
@@ -123,7 +138,7 @@ export default async function ShippingPage() {
 
       {/* In Transit */}
       <div className="card">
-        <h2 className="section-title" style={{ marginTop: 0 }}>🚚 In Transit ({inTransit.length})</h2>
+        <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Truck size={17} strokeWidth={2} /> In Transit ({inTransit.length})</h2>
         <table>
           <thead>
             <tr>
@@ -153,11 +168,10 @@ export default async function ShippingPage() {
                   <td className="text-muted">3-5 days</td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      {order.trackingUrl ? (
+                      {order.trackingUrl && (
                         <a href={order.trackingUrl} target="_blank" className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>Track →</a>
-                      ) : (
-                        <button className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>🔍 Track</button>
                       )}
+                      {order.awbNumber && <RefreshTrackingButton orderId={order._id.toString()} />}
                       <Link href={`/orders/${order._id.toString()}`} className="btn" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>View</Link>
                     </div>
                   </td>

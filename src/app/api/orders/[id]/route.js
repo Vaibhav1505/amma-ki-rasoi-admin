@@ -2,16 +2,22 @@ import dbConnect from '@/lib/mongodb';
 import Order from '@/lib/models/Order';
 import { adjustStock } from '@/lib/inventory';
 import { ensureCustomer } from '@/lib/customers';
+import { gramsForWeight } from '@/lib/weight';
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 
-// Sums quantities per linked product, e.g. { "<productId>": 3 }
-function quantitiesByProduct(items) {
+// Sums grams needed per linked product, e.g. { "<productId>": 2000 }. Stock
+// is tracked once per product as total weight, so an edit that changes an
+// item's weight (not just its quantity) still needs to reconcile correctly
+// — this converts every item to grams before diffing. Items from before this
+// field existed (no weight) contribute 0 grams; see lib/inventory.js.
+function gramsByProduct(items) {
   const map = new Map();
   (items || []).forEach((item) => {
     if (!item.product) return;
+    const grams = gramsForWeight(item.weight) * item.quantity;
     const key = String(item.product);
-    map.set(key, (map.get(key) || 0) + item.quantity);
+    map.set(key, (map.get(key) || 0) + grams);
   });
   return map;
 }
@@ -53,15 +59,16 @@ export async function PUT(request, { params }) {
 
     await ensureCustomer(order.customerPhone);
 
-    // Reconcile stock for any change in quantity of a product-linked item
-    // (e.g. quantity 2 -> 5 needs to pull 3 more units from inventory)
-    const beforeQty = quantitiesByProduct(before.items);
-    const afterQty = quantitiesByProduct(items);
-    const productIds = new Set([...beforeQty.keys(), ...afterQty.keys()]);
+    // Reconcile stock for any change in quantity or weight of a
+    // product-linked item (e.g. 1kg -> 500g, or quantity 2 -> 5, needs to
+    // pull the difference, in grams, from inventory)
+    const beforeGrams = gramsByProduct(before.items);
+    const afterGrams = gramsByProduct(items);
+    const productIds = new Set([...beforeGrams.keys(), ...afterGrams.keys()]);
     for (const productId of productIds) {
-      const delta = (beforeQty.get(productId) || 0) - (afterQty.get(productId) || 0);
+      const delta = (beforeGrams.get(productId) || 0) - (afterGrams.get(productId) || 0);
       if (delta !== 0) {
-        await adjustStock({ productId, change: delta, reason: 'order_edited', orderId: order._id });
+        await adjustStock({ productId, changeGrams: delta, reason: 'order_edited', orderId: order._id });
       }
     }
 

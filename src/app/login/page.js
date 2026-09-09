@@ -1,4 +1,5 @@
 import LoginForm from './LoginForm';
+import { Lock } from 'lucide-react';
 
 export const metadata = {
   title: 'Sign In | Amma Ki Rasoi Admin',
@@ -49,10 +50,12 @@ export default function LoginPage() {
         {/* Logo / Brand */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{
-            fontSize: '3rem', marginBottom: '12px',
+            marginBottom: '16px',
+            display: 'flex', justifyContent: 'center',
             filter: 'drop-shadow(0 0 20px rgba(193,68,14,0.4))',
           }}>
-            🏺
+            {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo on a static login screen */}
+            <img src="/logo.jpeg" alt="Amma Ki Rasoi" width={72} height={72} style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.15)' }} />
           </div>
           <h1 style={{
             color: 'white', fontSize: '1.5rem', fontWeight: '700',
@@ -82,8 +85,9 @@ export default function LoginPage() {
         <p style={{
           textAlign: 'center', marginTop: '24px', marginBottom: 0,
           color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
         }}>
-          🔒 Secure access · Amma Ki Rasoi Internal
+          <Lock size={12} strokeWidth={2} /> Secure access · Amma Ki Rasoi Internal
         </p>
       </div>
     </div>

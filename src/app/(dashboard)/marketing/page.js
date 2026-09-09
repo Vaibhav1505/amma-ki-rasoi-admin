@@ -2,29 +2,34 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Megaphone, AlertTriangle, Send, Gift, Copy, CheckCircle2, Truck, PartyPopper, Plus } from 'lucide-react';
 
 const TEMPLATES = [
   {
     id: 'order_confirmed',
-    label: '✅ Order Confirmation',
+    label: 'Order Confirmation',
+    icon: CheckCircle2,
     description: 'Send to customers after their order is placed',
     preview: `🏺 *Amma Ki Rasoi*\n\n✅ *Order Confirmed!*\nOrder ID: *#AKR-XXXX*\n\n📦 *Items:*\n• Aam Ka Achaar 500g × 1 = ₹380\n\n💰 *Total: ₹380*\nPayment: UPI (Paid)\n\nWe'll notify you once your order is packed and shipped.\nThank you! 🙏`,
   },
   {
     id: 'order_shipped',
-    label: '🚚 Order Shipped',
+    label: 'Order Shipped',
+    icon: Truck,
     description: 'Send when the order is handed to courier',
     preview: `🏺 *Amma Ki Rasoi*\n\n🚚 *Your Order is on its way!*\nOrder ID: *#AKR-XXXX*\n\n📦 Courier: Delhivery\n🔖 AWB: DL89XXXXX\n\nExpected delivery in 3-5 business days.\nThank you for your patience! 🙏`,
   },
   {
     id: 'order_delivered',
-    label: '🎉 Delivered — Request Review',
+    label: 'Delivered — Request Review',
+    icon: PartyPopper,
     description: 'Send after delivery to ask for a Google review',
     preview: `🏺 *Amma Ki Rasoi*\n\n✅ *Order Delivered!*\nOrder ID: *#AKR-XXXX*\n\nWe hope you love the flavours! 😊\nPlease share your feedback — it means the world to us.\n\n⭐ Rate us on Google: [Link]\n\nWith love,\n_Amma Ki Rasoi_ 🏺`,
   },
   {
     id: 'broadcast_festival',
-    label: '🎉 Festival Broadcast',
+    label: 'Festival Broadcast',
+    icon: PartyPopper,
     description: 'Announce special products for festivals',
     preview: `🎉 *Diwali Special — Amma Ki Rasoi!*\n_घर के स्वाद की परंपरा_\n\nCelebrate Diwali with authentic homemade flavours! 🪔\n\n🛍️ *Special Products:*\n• Diwali Gift Box — ₹999\n• Mixed Achaar Pack — ₹599\n\n📞 Reply to order!\n⚡ Limited stock!\n\n_Amma Ki Rasoi_ 🏺`,
   },
@@ -65,13 +70,13 @@ export default function MarketingPage() {
 
   return (
     <div>
-      <h1 className="page-title" style={{ marginBottom: '8px' }}>📣 Marketing</h1>
+      <h1 className="page-title" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}><Megaphone size={22} strokeWidth={2} /> Marketing</h1>
       <p className="text-muted" style={{ marginBottom: '32px' }}>Send WhatsApp messages to your customers directly from here.</p>
 
       {/* API Key Banner */}
       <div style={{ padding: '16px 20px', backgroundColor: '#FFFBEB', border: '1px solid #D4A017', borderRadius: '8px', marginBottom: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontWeight: '600', color: '#92400E' }}>⚙️ WhatsApp API not configured yet</div>
+          <div style={{ fontWeight: '600', color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={15} strokeWidth={2} /> WhatsApp API not configured yet</div>
           <div style={{ color: '#92400E', fontSize: '0.875rem', marginTop: '4px' }}>Add <code style={{ backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '4px' }}>WHATSAPP_API_KEY</code> to your <code style={{ backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '4px' }}>.env.local</code> file to enable automated sending.</div>
         </div>
         <Link href="/settings" className="btn" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Go to Settings</Link>
@@ -79,8 +84,12 @@ export default function MarketingPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '2px solid var(--border-cream)', marginBottom: '32px' }}>
-        <button style={tabStyle('broadcast')} onClick={() => setActiveTab('broadcast')}>📢 Broadcast</button>
-        <button style={tabStyle('coupons')} onClick={() => setActiveTab('coupons')}>🎁 Coupons</button>
+        <button style={{ ...tabStyle('broadcast'), display: 'inline-flex', alignItems: 'center', gap: '6px' }} onClick={() => setActiveTab('broadcast')}>
+          <Megaphone size={15} strokeWidth={2} /> Broadcast
+        </button>
+        <button style={{ ...tabStyle('coupons'), display: 'inline-flex', alignItems: 'center', gap: '6px' }} onClick={() => setActiveTab('coupons')}>
+          <Gift size={15} strokeWidth={2} /> Coupons
+        </button>
       </div>
 
       {activeTab === 'broadcast' && (
@@ -100,7 +109,9 @@ export default function MarketingPage() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '4px' }}>{t.label}</div>
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <t.icon size={14} strokeWidth={2} /> {t.label}
+                  </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.description}</div>
                 </button>
               ))}
@@ -121,7 +132,9 @@ export default function MarketingPage() {
                 rows="4"
                 style={{ width: '100%', padding: '12px', border: '1px solid var(--border-cream)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.875rem', resize: 'vertical' }}
               />
-              <button onClick={handleCopy} className="btn" style={{ marginTop: '12px' }}>📋 Copy Message</button>
+              <button onClick={handleCopy} className="btn" style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Copy size={14} strokeWidth={2} /> Copy Message
+              </button>
             </div>
 
             <div className="card">
@@ -147,10 +160,12 @@ export default function MarketingPage() {
               )}
 
               <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-                <button onClick={handleSend} className="btn btn-primary" disabled={sending}>
-                  {sending ? 'Sending...' : '📨 Send Broadcast'}
+                <button onClick={handleSend} className="btn btn-primary" disabled={sending} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Send size={14} strokeWidth={2} /> {sending ? 'Sending...' : 'Send Broadcast'}
                 </button>
-                <button onClick={handleCopy} className="btn">📋 Copy & Send Manually</button>
+                <button onClick={handleCopy} className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Copy size={14} strokeWidth={2} /> Copy & Send Manually
+                </button>
               </div>
             </div>
           </div>
@@ -159,7 +174,7 @@ export default function MarketingPage() {
 
       {activeTab === 'coupons' && (
         <div className="card">
-          <h2 className="section-title" style={{ marginTop: 0 }}>🎁 Coupon / Discount Codes</h2>
+          <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Gift size={17} strokeWidth={2} /> Coupon / Discount Codes</h2>
           <p className="text-muted" style={{ marginBottom: '24px' }}>Create coupon codes to share with customers on WhatsApp or Instagram.</p>
           <table>
             <thead>
@@ -191,7 +206,9 @@ export default function MarketingPage() {
               </tr>
             </tbody>
           </table>
-          <button className="btn btn-primary" style={{ marginTop: '24px' }}>+ Create New Coupon</button>
+          <button className="btn btn-primary" style={{ marginTop: '24px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} strokeWidth={2} /> Create New Coupon
+          </button>
         </div>
       )}
     </div>

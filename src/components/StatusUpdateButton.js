@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { STATUS_ICONS } from '@/components/StatusBadge';
 
 const STATUS_LABELS = {
-  pending:    { label: 'Pending',      color: '#D4A017', emoji: '🟡' },
-  confirmed:  { label: 'Confirmed',    color: '#2B6CB0', emoji: '🔵' },
-  packing:    { label: 'Packing',      color: '#DD6B20', emoji: '🟠' },
-  shipped:    { label: 'Shipped',      color: '#6B46C1', emoji: '🚚' },
-  delivered:  { label: 'Delivered',    color: '#4A7C59', emoji: '✅' },
-  cancelled:  { label: 'Cancelled',    color: '#A61C00', emoji: '❌' },
-  return:     { label: 'Return',       color: '#4A4A4A', emoji: '↩️' },
-  cod_pending:{ label: 'COD Pending',  color: '#B7791F', emoji: '💰' },
+  pending:    { label: 'Pending',      color: '#D4A017' },
+  confirmed:  { label: 'Confirmed',    color: '#2B6CB0' },
+  packing:    { label: 'Packing',      color: '#DD6B20' },
+  shipped:    { label: 'Shipped',      color: '#6B46C1' },
+  delivered:  { label: 'Delivered',    color: '#4A7C59' },
+  cancelled:  { label: 'Cancelled',    color: '#A61C00' },
+  return:     { label: 'Return',       color: '#4A4A4A' },
+  cod_pending:{ label: 'COD Pending',  color: '#B7791F' },
 };
 
 // The allowed next statuses from each current status
@@ -78,6 +79,7 @@ export default function StatusUpdateButton({ orderId, currentStatus }) {
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {nextStatuses.map((status) => {
           const info = STATUS_LABELS[status];
+          const Icon = STATUS_ICONS[status];
           return (
             <button
               key={status}
@@ -87,9 +89,10 @@ export default function StatusUpdateButton({ orderId, currentStatus }) {
                 border: `2px solid ${info.color}`,
                 color: info.color,
                 fontWeight: '600',
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
               }}
             >
-              {info.emoji} Mark as {info.label}
+              <Icon size={14} strokeWidth={2} /> Mark as {info.label}
             </button>
           );
         })}
@@ -106,8 +109,8 @@ export default function StatusUpdateButton({ orderId, currentStatus }) {
             background: 'white', borderRadius: '12px', padding: '32px',
             maxWidth: '420px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', marginBottom: '12px' }}>
-              {STATUS_LABELS[selectedStatus].emoji} Confirm Status Update
+            <h2 style={{ fontFamily: 'var(--font-heading)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {(() => { const Icon = STATUS_ICONS[selectedStatus]; return <Icon size={20} strokeWidth={2} />; })()} Confirm Status Update
             </h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.6' }}>
               Are you sure you want to mark this order as{' '}

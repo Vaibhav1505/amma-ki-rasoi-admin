@@ -1,6 +1,8 @@
 import dbConnect from '../../../lib/mongodb';
 import Order from '../../../lib/models/Order';
 import Link from 'next/link';
+import StatusBadge from '@/components/StatusBadge';
+import { Wallet, FileText } from 'lucide-react';
 
 export const metadata = {
   title: 'Finance & Revenue | Amma Ki Rasoi Admin'
@@ -31,8 +33,10 @@ export default async function FinancePage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>💰 Financial Overview</h1>
-        <button className="btn btn-primary">Generate Tax Report</button>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><Wallet size={22} strokeWidth={2} /> Financial Overview</h1>
+        <button className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <FileText size={15} strokeWidth={2} /> Generate Tax Report
+        </button>
       </div>
 
       <div className="grid-4" style={{ marginBottom: '32px' }}>
@@ -88,7 +92,7 @@ export default async function FinancePage() {
                       <Link href={`/orders/${order._id}`} style={{ color: 'var(--primary-terracotta)' }}>{order.orderId}</Link>
                     </td>
                     <td className="data-font" style={{ fontWeight: 'bold' }}>₹{order.totalAmount}</td>
-                    <td><span className={`badge badge-${order.status}`}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                    <td><StatusBadge status={order.status} /></td>
                   </tr>
                 ))
               )}

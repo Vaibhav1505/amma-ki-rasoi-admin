@@ -1,5 +1,9 @@
 import Customer from './models/Customer';
 
+// Canonical customer-upsert helper — shared shape between amma_ki_rasoi
+// (storefront) and amma_ki_rasoi_admin. The two repos each keep their own
+// copy of this file today; keep them byte-identical when editing either one.
+
 // Normalizes a phone number to its last 10 digits so differently-formatted
 // numbers for the same person ("+91 98765 43210", "9876543210") compare equal.
 export function normalizePhone(phone) {

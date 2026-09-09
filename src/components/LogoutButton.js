@@ -2,6 +2,7 @@
 
 import { logout } from '@/app/actions/auth';
 import { useTransition } from 'react';
+import { LogOut } from 'lucide-react';
 
 export default function LogoutButton() {
   const [pending, startTransition] = useTransition();
@@ -28,11 +29,13 @@ export default function LogoutButton() {
         fontFamily: 'inherit',
         transition: 'all 0.2s',
         opacity: pending ? 0.6 : 1,
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
       }}
-      onMouseEnter={e => { if (!pending) { e.target.style.backgroundColor = 'rgba(193,68,14,0.08)'; } }}
-      onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; }}
+      onMouseEnter={e => { if (!pending) { e.currentTarget.style.backgroundColor = 'rgba(193,68,14,0.08)'; } }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
     >
-      {pending ? '...' : '🚪 Logout'}
+      <LogOut size={14} strokeWidth={2} />
+      {pending ? '...' : 'Logout'}
     </button>
   );
 }

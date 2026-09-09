@@ -3,6 +3,9 @@ import Order from '@/lib/models/Order';
 import Customer from '@/lib/models/Customer';
 import Link from 'next/link';
 import CustomerCrmEditor from '@/components/CustomerCrmEditor';
+import CustomerSegmentBadge from '@/components/CustomerSegmentBadge';
+import StatusBadge from '@/components/StatusBadge';
+import { Phone, Mail, MessageCircle, Package, BarChart3, Heart, MapPin } from 'lucide-react';
 
 
 export const metadata = {
@@ -40,16 +43,6 @@ export default async function CustomerProfilePage({ params }) {
   });
   const favProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  const badge = orders.length >= 5 ? { label: '⭐ VIP', color: 'var(--warning-gold)', bg: '#FFFBEB' } 
-              : orders.length >= 2 ? { label: '🔁 Repeat', color: '#2B6CB0', bg: '#EBF8FF' } 
-              : { label: '🆕 New', color: '#4A7C59', bg: '#F0FFF4' };
-
-  const STATUS_COLORS = {
-    pending: '#D4A017', confirmed: '#2B6CB0', packing: '#DD6B20',
-    shipped: '#6B46C1', delivered: '#4A7C59', cancelled: '#A61C00',
-    return: '#4A4A4A', cod_pending: '#B7791F',
-  };
-
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
@@ -65,16 +58,22 @@ export default async function CustomerProfilePage({ params }) {
             </div>
             <div>
               <h1 style={{ margin: '0 0 4px', fontFamily: 'var(--font-heading)', fontSize: '1.6rem' }}>{customer.customerName}</h1>
-              <div className="text-muted">📞 {customer.customerPhone}</div>
-              {customer.customerEmail && <div className="text-muted">✉️ {customer.customerEmail}</div>}
+              <div className="text-muted" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={13} strokeWidth={2} /> {customer.customerPhone}</div>
+              {customer.customerEmail && <div className="text-muted" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Mail size={13} strokeWidth={2} /> {customer.customerEmail}</div>}
               <div className="text-muted" style={{ marginTop: '4px' }}>Customer since {new Date(orders[orders.length - 1].createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span style={{ padding: '6px 16px', borderRadius: '20px', fontWeight: '700', backgroundColor: badge.bg, color: badge.color, border: `1px solid ${badge.color}` }}>{badge.label}</span>
-            <a href={`https://wa.me/${phone?.replace(/\D/g, '')}`} target="_blank" className="btn">💬 WhatsApp</a>
-            <a href={`tel:${phone}`} className="btn">📞 Call</a>
-            <Link href="/orders/new" className="btn btn-primary">📦 New Order</Link>
+            <CustomerSegmentBadge totalOrders={orders.length} style={{ padding: '6px 16px', fontSize: '0.9rem', border: '1px solid currentColor' }} />
+            <a href={`https://wa.me/${phone?.replace(/\D/g, '')}`} target="_blank" className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <MessageCircle size={14} strokeWidth={2} /> WhatsApp
+            </a>
+            <a href={`tel:${phone}`} className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Phone size={14} strokeWidth={2} /> Call
+            </a>
+            <Link href="/orders/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Package size={14} strokeWidth={2} /> New Order
+            </Link>
           </div>
         </div>
       </div>
@@ -84,7 +83,7 @@ export default async function CustomerProfilePage({ params }) {
         <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Stats */}
           <div className="card">
-            <h2 className="section-title" style={{ marginTop: 0 }}>📊 Stats</h2>
+            <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><BarChart3 size={17} strokeWidth={2} /> Stats</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {[
                 { label: 'Total Orders', value: orders.length },
@@ -103,7 +102,7 @@ export default async function CustomerProfilePage({ params }) {
           {/* Favourite Products */}
           {favProducts.length > 0 && (
             <div className="card">
-              <h2 className="section-title" style={{ marginTop: 0 }}>❤️ Favourites</h2>
+              <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Heart size={17} strokeWidth={2} /> Favourites</h2>
               {favProducts.map(([name, count]) => (
                 <div key={name} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-cream)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{name}</span>
@@ -115,7 +114,7 @@ export default async function CustomerProfilePage({ params }) {
 
           {/* Address */}
           <div className="card">
-            <h2 className="section-title" style={{ marginTop: 0 }}>📍 Address</h2>
+            <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><MapPin size={17} strokeWidth={2} /> Address</h2>
             <div style={{ fontSize: '0.875rem', lineHeight: '1.7', color: 'var(--text-muted)' }}>
               {orders[0].shippingAddress || 'No address saved.'}
             </div>
@@ -127,7 +126,7 @@ export default async function CustomerProfilePage({ params }) {
         {/* Right: Order History */}
         <div style={{ flex: 1 }}>
           <div className="card">
-            <h2 className="section-title" style={{ marginTop: 0 }}>📦 Order History ({orders.length})</h2>
+            <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Package size={17} strokeWidth={2} /> Order History ({orders.length})</h2>
             <table>
               <thead>
                 <tr>
@@ -149,9 +148,7 @@ export default async function CustomerProfilePage({ params }) {
                     <td className="data-font" style={{ fontWeight: '700' }}>₹{order.totalAmount}</td>
                     <td className="text-muted" style={{ fontSize: '0.8rem' }}>{order.paymentMethod}</td>
                     <td>
-                      <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '700', backgroundColor: STATUS_COLORS[order.status] + '20', color: STATUS_COLORS[order.status] || '#999' }}>
-                        {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Unknown'}
-                      </span>
+                      <StatusBadge status={order.status} />
                     </td>
                     <td>
                       <Link href={`/orders/${order._id.toString()}`} style={{ color: 'var(--primary-terracotta)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600' }}>View →</Link>

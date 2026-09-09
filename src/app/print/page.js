@@ -1,6 +1,8 @@
 import dbConnect from '../../lib/mongodb';
 import Order from '../../lib/models/Order';
 import Link from 'next/link';
+import StatusBadge from '@/components/StatusBadge';
+import { Printer } from 'lucide-react';
 
 export const metadata = {
   title: 'Print Centre | Amma Ki Rasoi'
@@ -11,11 +13,13 @@ export default async function PrintCentrePage() {
   
   // Fetch recent orders that need printing
   const orders = await Order.find({ status: { $in: ['confirmed', 'packing'] } }).sort({ createdAt: -1 }).lean();
+  const orderIds = orders.map(o => o._id.toString()).join(',');
+  const packingIds = orders.filter(o => o.status === 'packing').map(o => o._id.toString()).join(',');
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>🖨️ Print Centre</h1>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><Printer size={22} strokeWidth={2} /> Print Centre</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button className="btn">Print Product Stickers</button>
         </div>
@@ -28,12 +32,20 @@ export default async function PrintCentrePage() {
           <p className="text-muted" style={{ marginBottom: '24px' }}>Print documents for all currently pending shipments.</p>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button className="btn btn-primary" style={{ padding: '12px', fontSize: '1rem' }}>
+            <Link
+              href={orders.length > 0 ? `/print/invoices/bulk?ids=${orderIds}` : '#'}
+              className="btn btn-primary"
+              style={{ padding: '12px', fontSize: '1rem', textAlign: 'center', pointerEvents: orders.length > 0 ? 'auto' : 'none', opacity: orders.length > 0 ? 1 : 0.5 }}
+            >
               Print All Invoices ({orders.length})
-            </button>
-            <button className="btn" style={{ padding: '12px', fontSize: '1rem', border: '1px solid var(--primary-terracotta)', color: 'var(--primary-terracotta)', backgroundColor: 'transparent' }}>
+            </Link>
+            <Link
+              href={packingIds ? `/print/labels/bulk?ids=${packingIds}` : '#'}
+              className="btn"
+              style={{ padding: '12px', fontSize: '1rem', border: '1px solid var(--primary-terracotta)', color: 'var(--primary-terracotta)', backgroundColor: 'transparent', textAlign: 'center', pointerEvents: packingIds ? 'auto' : 'none', opacity: packingIds ? 1 : 0.5 }}
+            >
               Print All Shipping Labels
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -62,7 +74,7 @@ export default async function PrintCentrePage() {
                   <tr key={order._id.toString()}>
                     <td className="data-font" style={{ fontWeight: '600' }}>{order.orderId}</td>
                     <td>{order.customerName}</td>
-                    <td><span className={`badge badge-${order.status}`}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+                    <td><StatusBadge status={order.status} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <Link href={`/print/invoice/${order._id}`} className="btn">Invoice</Link>

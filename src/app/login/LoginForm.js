@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { login } from '@/app/actions/auth';
+import { AlertTriangle } from 'lucide-react';
 
 export default function LoginForm() {
   const [state, action, pending] = useActionState(login, undefined);
@@ -67,7 +68,7 @@ export default function LoginForm() {
           borderRadius: '8px', color: '#FCA5A5',
           fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px',
         }}>
-          ⚠️ {state.error}
+          <AlertTriangle size={15} strokeWidth={2} /> {state.error}
         </div>
       )}
 

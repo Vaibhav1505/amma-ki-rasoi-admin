@@ -4,6 +4,8 @@ import Customer from '../../../lib/models/Customer';
 import { normalizePhone } from '../../../lib/customers';
 import Link from 'next/link';
 import MergeDuplicateCustomers from '@/components/MergeDuplicateCustomers';
+import CustomerSegmentBadge from '@/components/CustomerSegmentBadge';
+import { Users, AlertTriangle, MessageCircle, Phone } from 'lucide-react';
 
 export const metadata = {
   title: 'Customers | Amma Ki Rasoi Admin'
@@ -63,7 +65,7 @@ export default async function CustomersPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>👥 Customers Rolodex</h1>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><Users size={22} strokeWidth={2} /> Customers Rolodex</h1>
         <a href="/api/customers/export" className="btn btn-primary">Export CSV</a>
       </div>
 
@@ -86,7 +88,7 @@ export default async function CustomersPage() {
 
       {duplicateGroups.length > 0 && (
         <div className="card" style={{ marginBottom: '24px' }}>
-          <h2 className="section-title" style={{ marginTop: 0 }}>⚠️ Possible Duplicate Customers</h2>
+          <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><AlertTriangle size={17} strokeWidth={2} /> Possible Duplicate Customers</h2>
           <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '16px' }}>
             These phone numbers look like the same person, formatted differently across orders.
           </p>
@@ -119,11 +121,6 @@ export default async function CustomersPage() {
               </tr>
             ) : (
               customers.map((cust, idx) => {
-                const segment = cust.totalOrders >= 5
-                  ? { label: '⭐ VIP', color: 'var(--warning-gold)', bg: '#FFFBEB' }
-                  : cust.totalOrders >= 2
-                  ? { label: '🔁 Repeat', color: '#2B6CB0', bg: '#EBF8FF' }
-                  : { label: '🆕 New', color: '#4A7C59', bg: '#F0FFF4' };
                 const tags = tagsByPhone.get(cust.phone) || [];
                 return (
                   <tr key={idx}>
@@ -137,9 +134,7 @@ export default async function CustomersPage() {
                       {cust.email !== '-' && <div className="text-muted" style={{ fontSize: '0.75rem' }}>{cust.email}</div>}
                     </td>
                     <td>
-                      <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '700', backgroundColor: segment.bg, color: segment.color }}>
-                        {segment.label}
-                      </span>
+                      <CustomerSegmentBadge totalOrders={cust.totalOrders} />
                     </td>
                     <td>
                       {tags.length === 0 ? (
@@ -158,8 +153,8 @@ export default async function CustomersPage() {
                     <td>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <Link href={`/customers/${encodeURIComponent(cust.phone)}`} className="btn" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>View</Link>
-                        <a href={`https://wa.me/${cust.phone?.replace(/\D/g, '')}`} target="_blank" className="btn" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>💬</a>
-                        <a href={`tel:${cust.phone}`} className="btn" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>📞</a>
+                        <a href={`https://wa.me/${cust.phone?.replace(/\D/g, '')}`} target="_blank" className="btn" style={{ padding: '4px 10px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}><MessageCircle size={14} strokeWidth={2} /></a>
+                        <a href={`tel:${cust.phone}`} className="btn" style={{ padding: '4px 10px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}><Phone size={14} strokeWidth={2} /></a>
                       </div>
                     </td>
                   </tr>

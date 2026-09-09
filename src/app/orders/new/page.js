@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { User, Package, ClipboardList, X, Check } from 'lucide-react';
+import { gramsForWeight, formatKg } from '@/lib/weight';
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -17,6 +19,24 @@ export default function NewOrderPage() {
       .catch(() => {});
   }, []);
 
+  // Flatten each product's package sizes into individual pickable options —
+  // stock is one pool per product, so availability is checked per size
+  // against that same shared number (see lib/weight.js).
+  const productOptions = useMemo(() => products.flatMap(p =>
+    (p.variants || []).map(v => {
+      const stockGrams = p.stockGrams ?? 0;
+      return {
+        key: `${p._id}::${v.weight}`,
+        productId: p._id,
+        productName: `${p.name} (${v.weight})`,
+        weight: v.weight,
+        price: v.price,
+        stockGrams,
+        disabled: stockGrams < gramsForWeight(v.weight)
+      };
+    })
+  ), [products]);
+
   const [form, setForm] = useState({
     customerName: '',
     customerPhone: '',
@@ -29,7 +49,7 @@ export default function NewOrderPage() {
   });
 
   const [items, setItems] = useState([
-    { product: '', productName: '', quantity: 1, price: 0 }
+    { product: '', productName: '', weight: '', quantity: 1, price: 0 }
   ]);
 
   const handleFormChange = (e) => {
@@ -40,16 +60,16 @@ export default function NewOrderPage() {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: field === 'quantity' || field === 'price' ? Number(value) : value } : item));
   };
 
-  const handleProductSelect = (idx, productId) => {
-    const product = products.find(p => p._id === productId);
+  const handleProductSelect = (idx, key) => {
+    const opt = productOptions.find(o => o.key === key);
     setItems(prev => prev.map((item, i) => {
       if (i !== idx) return item;
-      if (!product) return { ...item, product: '', productName: '' };
-      return { ...item, product: product._id, productName: product.name, price: product.price };
+      if (!opt) return { ...item, product: '', productName: '', weight: '' };
+      return { ...item, product: opt.productId, productName: opt.productName, weight: opt.weight, price: opt.price };
     }));
   };
 
-  const addItem = () => setItems(prev => [...prev, { product: '', productName: '', quantity: 1, price: 0 }]);
+  const addItem = () => setItems(prev => [...prev, { product: '', productName: '', weight: '', quantity: 1, price: 0 }]);
   const removeItem = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
 
   const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
@@ -62,8 +82,9 @@ export default function NewOrderPage() {
     try {
       const payload = {
         ...form,
-        items: items.map(({ product, productName, quantity, price }) => ({
+        items: items.map(({ product, productName, weight, quantity, price }) => ({
           ...(product ? { product } : {}),
+          ...(weight ? { weight } : {}),
           productName, quantity, price
         })),
         totalAmount,
@@ -108,7 +129,7 @@ export default function NewOrderPage() {
 
             {/* Customer Details */}
             <div className="card">
-              <h2 className="section-title" style={{ marginTop: 0 }}>👤 Customer Details</h2>
+              <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><User size={17} strokeWidth={2} /> Customer Details</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
                   <label style={labelStyle}>Full Name *</label>
@@ -131,7 +152,7 @@ export default function NewOrderPage() {
 
             {/* Order Items */}
             <div className="card">
-              <h2 className="section-title" style={{ marginTop: 0 }}>📦 Order Items</h2>
+              <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Package size={17} strokeWidth={2} /> Order Items</h2>
               <table style={{ border: 'none', boxShadow: 'none', marginBottom: '16px' }}>
                 <thead>
                   <tr>
@@ -146,18 +167,20 @@ export default function NewOrderPage() {
                 <tbody>
                   {items.map((item, idx) => {
                     const linkedProduct = products.find(p => p._id === item.product);
+                    const neededGrams = item.weight ? gramsForWeight(item.weight) * item.quantity : 0;
+                    const insufficientStock = linkedProduct && neededGrams > (linkedProduct.stockGrams ?? 0);
                     return (
                       <tr key={idx}>
                         <td>
                           <select
-                            value={item.product}
+                            value={item.product && item.weight ? `${item.product}::${item.weight}` : ''}
                             onChange={(e) => handleProductSelect(idx, e.target.value)}
                             style={{ ...inputStyle, padding: '8px 10px' }}
                           >
                             <option value="">Custom item</option>
-                            {products.map(p => (
-                              <option key={p._id} value={p._id} disabled={p.stock <= 0}>
-                                {p.name} ({p.weight}) — ₹{p.price}{p.stock <= 0 ? ' — OUT OF STOCK' : p.stock < 10 ? ` — ${p.stock} left` : ''}
+                            {productOptions.map(o => (
+                              <option key={o.key} value={o.key} disabled={o.disabled}>
+                                {o.productName} — ₹{o.price}{o.disabled ? ' — OUT OF STOCK' : ` — ${formatKg(o.stockGrams)}kg left`}
                               </option>
                             ))}
                           </select>
@@ -168,7 +191,7 @@ export default function NewOrderPage() {
                             value={item.productName}
                             onChange={(e) => handleItemChange(idx, 'productName', e.target.value)}
                             style={{ ...inputStyle, padding: '8px 10px' }}
-                            placeholder="e.g. Aam Ka Achaar 500g"
+                            placeholder="e.g. Aam Ka Achaar (500g)"
                           />
                         </td>
                         <td>
@@ -178,8 +201,8 @@ export default function NewOrderPage() {
                             onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                             style={{ ...inputStyle, padding: '8px 10px' }}
                           />
-                          {linkedProduct && item.quantity > linkedProduct.stock && (
-                            <div style={{ fontSize: '0.7rem', color: 'var(--danger-red)', marginTop: '4px' }}>Only {linkedProduct.stock} in stock</div>
+                          {insufficientStock && (
+                            <div style={{ fontSize: '0.7rem', color: 'var(--danger-red)', marginTop: '4px' }}>Only {formatKg(linkedProduct.stockGrams)}kg available</div>
                           )}
                         </td>
                         <td>
@@ -193,7 +216,7 @@ export default function NewOrderPage() {
                         <td className="data-font" style={{ fontWeight: '600' }}>₹{item.quantity * item.price}</td>
                         <td>
                           {items.length > 1 && (
-                            <button type="button" onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: 'var(--danger-red)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                            <button type="button" onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: 'var(--danger-red)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}><X size={16} strokeWidth={2} /></button>
                           )}
                         </td>
                       </tr>
@@ -218,7 +241,7 @@ export default function NewOrderPage() {
           {/* Right: Order Meta */}
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div className="card">
-              <h2 className="section-title" style={{ marginTop: 0 }}>📋 Order Details</h2>
+              <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={17} strokeWidth={2} /> Order Details</h2>
               <div style={{ marginBottom: '20px' }}>
                 <label style={labelStyle}>Order Source</label>
                 <select name="orderSource" value={form.orderSource} onChange={handleFormChange} style={inputStyle}>
@@ -252,7 +275,7 @@ export default function NewOrderPage() {
             </div>
 
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>
-              {loading ? 'Creating Order...' : '✓ Create Order'}
+              {loading ? 'Creating Order...' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Check size={16} strokeWidth={2} /> Create Order</span>}
             </button>
             <Link href="/orders" className="btn" style={{ width: '100%', padding: '12px', textAlign: 'center' }}>Cancel</Link>
           </div>

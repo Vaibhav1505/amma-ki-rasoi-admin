@@ -1,6 +1,8 @@
 import dbConnect from '../../lib/mongodb';
 import Order from '../../lib/models/Order';
 import Link from 'next/link';
+import StatusBadge, { statusLabel } from '@/components/StatusBadge';
+import { ClipboardList, Plus, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const metadata = {
   title: 'Orders | Amma Ki Rasoi Admin'
@@ -38,7 +40,6 @@ export default async function OrdersPage({ searchParams }) {
     .lean();
 
   const statuses = ['All', 'pending', 'confirmed', 'packing', 'shipped', 'delivered', 'cancelled', 'return', 'cod_pending'];
-  const statusLabel = (s) => s === 'cod_pending' ? 'COD Pending' : s.charAt(0).toUpperCase() + s.slice(1);
 
   // Builds a link that preserves the current filters while changing one param
   const linkFor = (overrides) => {
@@ -54,8 +55,12 @@ export default async function OrdersPage({ searchParams }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <h1 className="page-title" style={{ margin: 0 }}>Orders Management</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <Link href="/orders/bulk" className="btn">📋 Bulk Requests</Link>
-          <Link href="/orders/new" className="btn btn-primary">+ Create Manual Order</Link>
+          <Link href="/orders/bulk" className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <ClipboardList size={15} strokeWidth={2} /> Bulk Requests
+          </Link>
+          <Link href="/orders/new" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Plus size={15} strokeWidth={2} /> Create Manual Order
+          </Link>
         </div>
       </div>
 
@@ -90,8 +95,14 @@ export default async function OrdersPage({ searchParams }) {
               placeholder="Search order ID, name, or phone..."
               style={{ padding: '8px 14px', border: '1px solid var(--border-cream)', borderRadius: '20px', fontSize: '0.875rem', minWidth: '260px' }}
             />
-            <button type="submit" className="btn">🔍 Search</button>
-            {q && <Link href={linkFor({ q: undefined, page: undefined })} className="btn">✕ Clear</Link>}
+            <button type="submit" className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Search size={14} strokeWidth={2} /> Search
+            </button>
+            {q && (
+              <Link href={linkFor({ q: undefined, page: undefined })} className="btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <X size={14} strokeWidth={2} /> Clear
+              </Link>
+            )}
           </form>
         </div>
       </div>
@@ -135,9 +146,7 @@ export default async function OrdersPage({ searchParams }) {
                     </div>
                   </td>
                   <td>
-                    <span className={`badge badge-${order.status}`}>
-                      {statusLabel(order.status)}
-                    </span>
+                    <StatusBadge status={order.status} />
                   </td>
                   <td>
                     <Link href={`/orders/${order._id}`} className="btn">View Details</Link>
@@ -157,16 +166,16 @@ export default async function OrdersPage({ searchParams }) {
               <Link
                 href={linkFor({ page: String(currentPage - 1) })}
                 className="btn"
-                style={{ pointerEvents: currentPage <= 1 ? 'none' : 'auto', opacity: currentPage <= 1 ? 0.4 : 1 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', pointerEvents: currentPage <= 1 ? 'none' : 'auto', opacity: currentPage <= 1 ? 0.4 : 1 }}
               >
-                ← Prev
+                <ChevronLeft size={14} strokeWidth={2} /> Prev
               </Link>
               <Link
                 href={linkFor({ page: String(currentPage + 1) })}
                 className="btn"
-                style={{ pointerEvents: currentPage >= totalPages ? 'none' : 'auto', opacity: currentPage >= totalPages ? 0.4 : 1 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', pointerEvents: currentPage >= totalPages ? 'none' : 'auto', opacity: currentPage >= totalPages ? 0.4 : 1 }}
               >
-                Next →
+                Next <ChevronRight size={14} strokeWidth={2} />
               </Link>
             </div>
           </div>

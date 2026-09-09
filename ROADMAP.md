@@ -49,10 +49,14 @@ env-var-only / cosmetic (disabled in the UI) — wiring those up is Phase 9.
 - [x] "Export CSV" now downloads a real CSV of all customers (name, phone, email, orders, lifetime value, last order, tags, address) via `/api/customers/export`
 - [x] Duplicate-customer detection + merge: customers list groups phone numbers by their last-10-digits, flags likely duplicates (same person, differently formatted number), and a "Merge into selected" action reassigns their orders and unions tags/notes into one canonical phone (`/api/customers/merge`)
 
-## Phase 5 — Shipping & logistics
-- [ ] Turn on real ShipRocket integration (scaffolded in `src/lib/shiprocket.js`)
-- [ ] Webhook/polling to auto-update status from courier tracking
-- [ ] Wire "Print All Labels" and "Schedule Pickup" buttons
+## Phase 5 — Shipping & logistics ✅ done (ShipRocket wiring untested against a live account)
+- [x] `src/lib/shiprocket.js` now makes real calls (auth/login, orders/create/adhoc, courier/assign/awb, courier/generate/pickup, courier/track/awb) instead of returning placeholders. **Caveat:** built against ShipRocket's publicly documented v1 API with no live account to test against — the first real run with real credentials is effectively an integration test; if a response field name doesn't match, it'll surface as a clear error rather than silently corrupting data, but expect to need small field-mapping fixes.
+- [x] "Create Shipment via ShipRocket" on the order detail page now actually creates the shipment, assigns a courier/AWB, and moves the order to `shipped` (`/api/orders/[id]/ship`)
+- [x] Status sync from courier tracking, two ways: a webhook receiver (`/api/webhooks/shiprocket`, shared-secret protected) for push updates, and a manual "Track" button per shipped order for on-demand polling — both route through one shared mapper (`src/lib/orderTrackingSync.js`) so they can't drift apart
+- [x] "Print All Labels" / "Print All Invoices" wired to real bulk print pages (`/print/labels/bulk`, `/print/invoices/bulk`) — factored the label/invoice markup into reusable components so single and bulk printing share one source of truth
+- [x] "Schedule Pickup" wired to request pickup for every shipped-but-not-yet-picked-up order in one call
+
+Not done: courier serviceability/rate comparison (the "Active Couriers" list on the Shipping page is still illustrative) — would need another ShipRocket endpoint and felt like scope creep beyond "turn the integration on."
 
 ## Phase 6 — Finance
 - [ ] Persist expenses in a real `Expense` model (currently hardcoded table)

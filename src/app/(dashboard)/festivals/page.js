@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PartyPopper, Plus } from 'lucide-react';
 
 export const metadata = {
   title: 'Festival Planning | Amma Ki Rasoi Admin'
@@ -32,8 +33,10 @@ export default function FestivalsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>🎉 Festival Planning</h1>
-        <button className="btn btn-primary">+ Add Campaign</button>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><PartyPopper size={22} strokeWidth={2} /> Festival Planning</h1>
+        <button className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Plus size={15} strokeWidth={2} /> Add Campaign
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '32px' }}>

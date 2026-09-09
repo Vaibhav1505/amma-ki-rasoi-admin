@@ -2,6 +2,7 @@ import "./globals.css";
 import Sidebar from '@/components/Sidebar';
 import LogoutButton from '@/components/LogoutButton';
 import { getSession } from '@/lib/session';
+import { Amphora, Bell } from 'lucide-react';
 
 export const metadata = {
   title: "Admin Dashboard | Amma Ki Rasoi",
@@ -43,12 +44,13 @@ export default async function RootLayout({ children }) {
 
           <main className="main-content">
             <header className="topbar">
-              <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                🏺 Amma Ki Rasoi — Admin
+              <div style={{ fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Amphora size={18} strokeWidth={2} />
+                Amma Ki Rasoi — Admin
               </div>
               <div className="user-info">
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{currentDate}</span>
-                <span>🔔</span>
+                <Bell size={17} strokeWidth={2} />
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
                   padding: '4px 12px 4px 4px',

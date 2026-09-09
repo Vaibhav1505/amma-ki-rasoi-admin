@@ -3,6 +3,9 @@ import Order from '../../../lib/models/Order';
 import Product from '../../../lib/models/Product';
 import Link from 'next/link';
 import CopyLowStockAlert from '@/components/CopyLowStockAlert';
+import { BarChart3, Download } from 'lucide-react';
+import { formatKg } from '../../../lib/weight';
+import { LOW_STOCK_THRESHOLD_GRAMS } from '../../../lib/inventory';
 
 export const metadata = {
   title: 'Reports & Analytics | Amma Ki Rasoi Admin'
@@ -29,19 +32,21 @@ export default async function ReportsPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  const lowStockProducts = products.filter(p => p.stock < 10);
+  const lowStockProducts = products.filter(p => (p.stockGrams ?? 0) < LOW_STOCK_THRESHOLD_GRAMS);
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>📊 Reports & Analytics</h1>
+        <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><BarChart3 size={22} strokeWidth={2} /> Reports & Analytics</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           <select className="btn" style={{ padding: '8px 16px', border: '1px solid var(--border-cream)' }}>
             <option>Last 30 Days</option>
             <option>This Year</option>
             <option>All Time</option>
           </select>
-          <button className="btn btn-primary">Download PDF</button>
+          <button className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Download size={15} strokeWidth={2} /> Download PDF
+          </button>
         </div>
       </div>
 
@@ -96,14 +101,17 @@ export default async function ReportsPage() {
                   </td>
                 </tr>
               ) : (
-                lowStockProducts.map((prod, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--border-cream)' }}>
-                    <td style={{ fontWeight: '500' }}>{prod.name}</td>
-                    <td className="data-font" style={{ textAlign: 'right', fontWeight: 'bold', color: prod.stock <= 0 ? 'var(--danger-red)' : 'var(--warning-yellow)' }}>
-                      {prod.stock} units
-                    </td>
-                  </tr>
-                ))
+                lowStockProducts.map((prod, idx) => {
+                  const prodStock = prod.stockGrams ?? 0;
+                  return (
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-cream)' }}>
+                      <td style={{ fontWeight: '500' }}>{prod.name}</td>
+                      <td className="data-font" style={{ textAlign: 'right', fontWeight: 'bold', color: prodStock <= 0 ? 'var(--danger-red)' : 'var(--warning-yellow)' }}>
+                        {formatKg(prodStock)} kg
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

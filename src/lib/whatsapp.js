@@ -12,6 +12,8 @@
 //   WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id   (meta only)
 // ─────────────────────────────────────────────────────────────
 
+import { formatKg } from './weight';
+
 const PROVIDER = process.env.WHATSAPP_PROVIDER || 'interakt';
 const API_KEY = process.env.WHATSAPP_API_KEY;
 
@@ -84,7 +86,10 @@ _Amma Ki Rasoi_ 🏺`;
 
 export function buildLowStockAlertMessage(products) {
   const lines = products
-    .map(p => `• ${p.name}${p.weight ? ` (${p.weight})` : ''} — ${p.stock <= 0 ? 'OUT OF STOCK' : `only ${p.stock} left`}`)
+    .map(p => {
+      const stock = p.stockGrams ?? 0;
+      return `• ${p.name} — ${stock <= 0 ? 'OUT OF STOCK' : `only ${formatKg(stock)}kg left`}`;
+    })
     .join('\n');
   return `⚠️ *Low Stock Alert — Amma Ki Rasoi*
 

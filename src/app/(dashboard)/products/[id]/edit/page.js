@@ -3,6 +3,8 @@ import dbConnect from '../../../../../lib/mongodb';
 import Product from '../../../../../lib/models/Product';
 import StockMovement from '../../../../../lib/models/StockMovement';
 import { notFound } from 'next/navigation';
+import { History } from 'lucide-react';
+import { formatKg } from '../../../../../lib/weight';
 
 export const metadata = {
   title: 'Edit Product | Amma Ki Rasoi Admin'
@@ -54,7 +56,7 @@ export default async function EditProductPage({ params }) {
           <ProductForm initialData={serializedProduct} />
         </div>
         <div className="card" style={{ flex: '1' }}>
-          <h2 className="section-title" style={{ marginTop: 0 }}>📜 Stock History</h2>
+          <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><History size={17} strokeWidth={2} /> Stock History</h2>
           {movements.length === 0 ? (
             <div className="text-muted" style={{ fontSize: '0.875rem' }}>No stock movements recorded yet.</div>
           ) : (
@@ -71,7 +73,7 @@ export default async function EditProductPage({ params }) {
                       </div>
                     </div>
                     <div className="data-font" style={{ fontWeight: '700', color: m.change > 0 ? 'var(--success-green)' : 'var(--danger-red)' }}>
-                      {m.change > 0 ? '+' : ''}{m.change}
+                      {m.change > 0 ? '+' : ''}{formatKg(m.change)}kg
                     </div>
                   </div>
                 );

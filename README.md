@@ -55,7 +55,7 @@ See **[ROADMAP.md](ROADMAP.md)** for the full phase-by-phase build tracker — w
 ## Getting started
 
 1. **Install dependencies**: `npm install`
-2. **Set up `.env.local`** (see the top of `src/lib/mongodb.js`, `src/lib/session.js`, and `src/app/actions/auth.js` for what's read):
+2. **Set up `.env.local`** — copy `.env.local.example` and fill it in. See **[ENV_VARS.md](ENV_VARS.md)** for what every variable does, which app(s) need it, and how to generate real values (also see the top of `src/lib/mongodb.js`, `src/lib/session.js`, and `src/app/actions/auth.js`):
    ```
    MONGODB_URI=mongodb://localhost:27017/amma_ki_rasoi   # or an Atlas connection string
    SESSION_SECRET=<random string — node -e "console.log(require('crypto').randomBytes(32).toString('base64'))">
