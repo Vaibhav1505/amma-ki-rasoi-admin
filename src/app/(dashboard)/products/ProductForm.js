@@ -9,7 +9,7 @@ import { WEIGHT_OPTIONS, kgToGrams, formatKg } from '@/lib/weight';
 // off whichever of the fixed package sizes (250g/500g/1kg) this product is
 // sold in and set a price for each; how much total stock you have is one
 // number that all of them draw from.
-export default function ProductForm({ initialData = null }) {
+export default function ProductForm({ initialData = null, rawMaterials = [] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,6 +39,16 @@ export default function ProductForm({ initialData = null }) {
   });
   const [variants, setVariants] = useState(initialVariants);
 
+  // Recipe (bill of materials): how many grams of each raw material go into
+  // 1kg of this finished product. Entirely optional — a product with no
+  // recipe rows just isn't tracked against raw material stock; logging a
+  // production batch for it only adds finished stock. See lib/rawMaterials.js.
+  const initialRecipe = (initialData?.recipe || []).map(line => ({
+    rawMaterial: line.rawMaterial || '',
+    gramsPerKg: line.gramsPerKg != null ? String(line.gramsPerKg) : ''
+  }));
+  const [recipe, setRecipe] = useState(initialRecipe.length > 0 ? initialRecipe : []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -50,6 +60,18 @@ export default function ProductForm({ initialData = null }) {
 
   const handleVariantField = (weight, field, value) => {
     setVariants(prev => ({ ...prev, [weight]: { ...prev[weight], [field]: value } }));
+  };
+
+  const addRecipeLine = () => {
+    setRecipe(prev => [...prev, { rawMaterial: rawMaterials[0]?._id || '', gramsPerKg: '' }]);
+  };
+
+  const removeRecipeLine = (idx) => {
+    setRecipe(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleRecipeField = (idx, field, value) => {
+    setRecipe(prev => prev.map((line, i) => (i === idx ? { ...line, [field]: value } : line)));
   };
 
   const handleSubmit = async (e) => {
@@ -72,6 +94,10 @@ export default function ProductForm({ initialData = null }) {
       setError('Every offered package size needs a price.');
       return;
     }
+    if (recipe.some(line => !line.rawMaterial || !line.gramsPerKg || Number(line.gramsPerKg) <= 0)) {
+      setError('Every recipe row needs a raw material and a grams-per-kg amount greater than 0.');
+      return;
+    }
 
     setLoading(true);
 
@@ -86,7 +112,8 @@ export default function ProductForm({ initialData = null }) {
         images: formData.image ? [formData.image] : [],
         ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(Boolean),
         variants: selectedVariants,
-        stockGrams: kgToGrams(formData.stockKg)
+        stockGrams: kgToGrams(formData.stockKg),
+        recipe: recipe.map(line => ({ rawMaterial: line.rawMaterial, gramsPerKg: Number(line.gramsPerKg) }))
       };
 
       const url = initialData
@@ -238,10 +265,89 @@ export default function ProductForm({ initialData = null }) {
         <input name="image" value={formData.image} onChange={handleChange} style={inputStyle} />
       </div>
 
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '24px' }}>
         <label style={labelStyle}>Ingredients (comma separated)</label>
         <input name="ingredients" value={formData.ingredients} onChange={handleChange} style={inputStyle} />
       </div>
+
+      <div style={{ marginBottom: '8px' }}>
+        <label style={labelStyle}>Recipe (per kg, optional)</label>
+      </div>
+      <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: 0, marginBottom: '10px' }}>
+        How much of each raw material this product uses to make 1kg of it — e.g. Thekua might use 300g sugar and 20g elaichi per kg. Leave empty if you don't want to track this product against raw material stock yet. Logging a production batch scales these amounts to whatever batch size you enter.
+      </p>
+      {rawMaterials.length === 0 ? (
+        <p className="text-muted" style={{ fontSize: '0.8125rem', marginTop: 0, marginBottom: '32px' }}>
+          No raw materials added yet — add some on the Raw Materials page first if you want to set a recipe here.
+        </p>
+      ) : (
+        <>
+          <div style={{ border: '1px solid #eee', borderRadius: '6px', overflow: 'hidden', marginBottom: recipe.length > 0 ? '10px' : 0 }}>
+            {recipe.length > 0 && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 160px 40px',
+                  gap: '16px',
+                  padding: '10px 12px',
+                  backgroundColor: '#f7f5f0',
+                  borderBottom: '1px solid #eee'
+                }}
+              >
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Raw Material</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grams / kg</span>
+                <span />
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recipe.map((line, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 160px 40px',
+                    gap: '16px',
+                    alignItems: 'center',
+                    padding: '12px',
+                    borderBottom: idx < recipe.length - 1 ? '1px solid #eee' : 'none'
+                  }}
+                >
+                  <select
+                    value={line.rawMaterial}
+                    onChange={e => handleRecipeField(idx, 'rawMaterial', e.target.value)}
+                    style={inputStyle}
+                  >
+                    {rawMaterials.map(rm => (
+                      <option key={rm._id} value={rm._id}>{rm.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="e.g. 300"
+                    value={line.gramsPerKg}
+                    onChange={e => handleRecipeField(idx, 'gramsPerKg', e.target.value)}
+                    style={inputStyle}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRecipeLine(idx)}
+                    className="btn"
+                    style={{ padding: '8px', lineHeight: 1 }}
+                    aria-label="Remove ingredient"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button type="button" onClick={addRecipeLine} className="btn" style={{ marginBottom: '32px' }}>
+            + Add Ingredient
+          </button>
+        </>
+      )}
 
       <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
         <button type="button" onClick={() => router.push('/products')} className="btn" disabled={loading}>Cancel</button>

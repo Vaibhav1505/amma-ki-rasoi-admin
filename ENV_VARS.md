@@ -49,6 +49,19 @@ can't send it).
 | `WHATSAPP_API_KEY` | API key/token from that provider. |
 | `WHATSAPP_PHONE_NUMBER_ID` | The WhatsApp Business phone number ID to send from. |
 
+## Optional — storefront, new-order email alerts
+
+Sends a plain-text email to the business every time a customer completes
+checkout (`src/lib/orderNotification.js`). Without these, checkout works
+exactly the same — the order still saves, stock still decrements — it just
+skips sending the email and logs a warning.
+
+| Variable | What it is |
+|---|---|
+| `SMTP_EMAIL` | The Gmail address the alert is sent **from**, authenticated via Gmail SMTP. Needs a Google "App Password" (not the real account password) — turn on 2-Step Verification, then generate one at https://myaccount.google.com/apppasswords. |
+| `SMTP_APP_PASSWORD` | That 16-character App Password. |
+| `ORDER_ALERT_EMAIL` | The inbox alerts get sent **to**. Defaults to `SMTP_EMAIL` if unset (i.e. the account emails itself). Currently `ammakirasoi.support@gmail.com` — a placeholder inbox until there's a real business email. |
+
 ## Set automatically — not yours to configure
 
 | Variable | Notes |

@@ -19,6 +19,21 @@ const VariantSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Optional recipe (bill of materials): how many grams of each raw material
+// go into making 1kg of this finished product. Purely an admin concept —
+// the RawMaterial ref only resolves in amma_ki_rasoi_admin, since raw
+// materials are never read or shown on the storefront. A product with no
+// recipe lines just isn't tracked against raw material stock — logging a
+// production batch for it only adds finished stock. Scales to any batch
+// size: gramsNeeded = gramsPerKg * (batchGrams / 1000). See lib/rawMaterials.js.
+const RecipeLineSchema = new mongoose.Schema(
+  {
+    rawMaterial: { type: mongoose.Schema.Types.ObjectId, ref: 'RawMaterial', required: true },
+    gramsPerKg: { type: Number, required: true, min: 0 }
+  },
+  { _id: false }
+);
+
 const ProductSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true }, // 'id' from old data.js
@@ -38,7 +53,8 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       validate: v => Array.isArray(v) && v.length > 0
     },
-    stockGrams: { type: Number, default: 0, min: 0 }
+    stockGrams: { type: Number, default: 0, min: 0 },
+    recipe: { type: [RecipeLineSchema], default: [] }
   },
   { timestamps: true }
 );

@@ -9,7 +9,7 @@ const StockMovementSchema = new mongoose.Schema(
     change: { type: Number, required: true }, // positive = stock added, negative = stock removed
     reason: {
       type: String,
-      enum: ['order_placed', 'order_edited', 'order_cancelled', 'order_returned', 'manual_adjustment'],
+      enum: ['order_placed', 'order_edited', 'order_cancelled', 'order_returned', 'manual_adjustment', 'production_batch'],
       required: true
     },
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' }

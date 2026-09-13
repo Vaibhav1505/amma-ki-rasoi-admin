@@ -3,22 +3,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Home, Package, ShoppingBag, Users, Truck, Printer,
+  Home, Package, ShoppingBag, Wheat, Building2, Users, Truck, Printer,
   Wallet, BarChart3, PartyPopper, Megaphone, Settings
 } from 'lucide-react';
 
 const navLinks = [
-  { href: '/',          label: 'Home',        icon: Home },
-  { href: '/orders',    label: 'Orders',      icon: Package },
-  { href: '/products',  label: 'Products',    icon: ShoppingBag },
-  { href: '/customers', label: 'Customers',   icon: Users },
-  { href: '/shipping',  label: 'Shipping',    icon: Truck },
-  { href: '/print',     label: 'Print',       icon: Printer },
-  { href: '/finance',   label: 'Finance',     icon: Wallet },
-  { href: '/reports',   label: 'Reports',     icon: BarChart3 },
-  { href: '/festivals', label: 'Festivals',   icon: PartyPopper },
-  { href: '/marketing', label: 'Marketing',   icon: Megaphone },
-  { href: '/settings',  label: 'Settings',    icon: Settings },
+  { href: '/',              label: 'Home',          icon: Home },
+  { href: '/orders',        label: 'Orders',        icon: Package },
+  { href: '/products',      label: 'Products',      icon: ShoppingBag },
+  { href: '/raw-materials', label: 'Raw Materials', icon: Wheat },
+  { href: '/suppliers',     label: 'Suppliers',     icon: Building2 },
+  { href: '/customers',     label: 'Customers',     icon: Users },
+  { href: '/shipping',      label: 'Shipping',      icon: Truck },
+  { href: '/print',         label: 'Print',         icon: Printer },
+  { href: '/finance',       label: 'Finance',       icon: Wallet },
+  { href: '/reports',       label: 'Reports',       icon: BarChart3 },
+  { href: '/festivals',     label: 'Festivals',     icon: PartyPopper },
+  { href: '/marketing',     label: 'Marketing',     icon: Megaphone },
+  { href: '/settings',      label: 'Settings',      icon: Settings },
 ];
 
 export default function Sidebar() {

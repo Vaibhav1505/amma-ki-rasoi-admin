@@ -1,74 +1,62 @@
-import ProductForm from '../../ProductForm';
-import ProductionBatchForm from '../../ProductionBatchForm';
+import RawMaterialForm from '../../RawMaterialForm';
 import dbConnect from '@/lib/mongodb';
-import Product from '@/lib/models/Product';
-import StockMovement from '@/lib/models/StockMovement';
-import Order from '@/lib/models/Order'; // eslint-disable-line no-unused-vars -- registers the Order model so .populate('order') can resolve it
 import RawMaterial from '@/lib/models/RawMaterial';
+import RawMaterialMovement from '@/lib/models/RawMaterialMovement';
+import Supplier from '@/lib/models/Supplier';
+import Product from '@/lib/models/Product'; // eslint-disable-line no-unused-vars -- registers the Product model so .populate('product') can resolve it
 import { notFound } from 'next/navigation';
 import { History } from 'lucide-react';
 import { formatKg } from '@/lib/weight';
 
 export const metadata = {
-  title: 'Edit Product | Amma Ki Rasoi Admin'
+  title: 'Edit Raw Material | Amma Ki Rasoi Admin'
 };
 
 const REASON_LABELS = {
-  order_placed: { label: 'Order placed', color: 'var(--danger-red)' },
-  order_edited: { label: 'Order edited', color: 'var(--text-muted)' },
-  order_cancelled: { label: 'Order cancelled', color: 'var(--success-green)' },
-  order_returned: { label: 'Order returned', color: 'var(--success-green)' },
+  restock: { label: 'Restocked', color: 'var(--success-green)' },
+  production_batch: { label: 'Used in production', color: 'var(--danger-red)' },
   manual_adjustment: { label: 'Manual adjustment', color: 'var(--text-muted)' },
-  production_batch: { label: 'Production batch', color: 'var(--success-green)' },
 };
 
-export default async function EditProductPage({ params }) {
+export default async function EditRawMaterialPage({ params }) {
   const resolvedParams = await params;
 
   await dbConnect();
 
-  let product;
+  let rawMaterial;
   try {
-    product = await Product.findById(resolvedParams.id).lean();
+    rawMaterial = await RawMaterial.findById(resolvedParams.id).lean();
   } catch (e) {
     notFound();
   }
 
-  if (!product) {
+  if (!rawMaterial) {
     notFound();
   }
 
-  const movements = await StockMovement.find({ product: product._id })
+  const movements = await RawMaterialMovement.find({ rawMaterial: rawMaterial._id })
     .sort({ createdAt: -1 })
     .limit(20)
-    .populate('order', 'orderId')
+    .populate('product', 'name')
     .lean();
 
-  const rawMaterials = await RawMaterial.find({}).sort({ name: 1 }).lean();
-  // Only pass what the recipe picker on ProductForm actually needs — not the
-  // raw document, which can carry a `supplier` ObjectId that isn't a plain
-  // value React can pass from a Server to a Client Component.
-  const serializedRawMaterials = rawMaterials.map(rm => ({ _id: rm._id.toString(), name: rm.name }));
+  const suppliers = await Supplier.find({}).sort({ name: 1 }).lean();
+  const serializedSuppliers = suppliers.map(s => ({ ...s, _id: s._id.toString() }));
 
-  // Convert ObjectId to string for Client Component props
-  const serializedProduct = {
-    ...product,
-    _id: product._id.toString(),
-    recipe: (product.recipe || []).map(line => ({
-      ...line,
-      rawMaterial: line.rawMaterial?.toString()
-    }))
+  const serializedRawMaterial = {
+    ...rawMaterial,
+    _id: rawMaterial._id.toString(),
+    supplier: rawMaterial.supplier ? rawMaterial.supplier.toString() : ''
   };
 
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>Edit Product</h1>
+        <h1 className="page-title" style={{ margin: 0 }}>Edit Raw Material</h1>
       </div>
       <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-        <div style={{ flex: '2', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-          <ProductForm initialData={serializedProduct} rawMaterials={serializedRawMaterials} />
-          <ProductionBatchForm productId={serializedProduct._id} hasRecipe={serializedProduct.recipe.length > 0} />
+        <div style={{ flex: '2' }}>
+          <RawMaterialForm initialData={serializedRawMaterial} suppliers={serializedSuppliers} />
         </div>
         <div className="card" style={{ flex: '1' }}>
           <h2 className="section-title" style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><History size={17} strokeWidth={2} /> Stock History</h2>
@@ -84,7 +72,7 @@ export default async function EditProductPage({ params }) {
                       <div style={{ fontSize: '0.85rem', fontWeight: '500' }}>{info.label}</div>
                       <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                         {new Date(m.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
-                        {m.order?.orderId ? ` · ${m.order.orderId}` : ''}
+                        {m.product?.name ? ` · ${m.product.name}` : ''}
                       </div>
                     </div>
                     <div className="data-font" style={{ fontWeight: '700', color: m.change > 0 ? 'var(--success-green)' : 'var(--danger-red)' }}>
