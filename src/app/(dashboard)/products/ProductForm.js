@@ -9,6 +9,19 @@ import { WEIGHT_OPTIONS, kgToGrams, formatKg } from '@/lib/weight';
 // off whichever of the fixed package sizes (250g/500g/1kg) this product is
 // sold in and set a price for each; how much total stock you have is one
 // number that all of them draw from.
+//
+// 1kg jars/packets of Badi, Sweets, and Namkeen don't pack or ship well, so
+// those categories are capped at 250g/500g — the 1kg checkbox simply isn't
+// offered for them (see allowedWeightsForCategory below). Pickles and Honey
+// are unaffected.
+const NO_1KG_CATEGORIES = ['Badi', 'Sweets', 'Namkeen'];
+
+function allowedWeightsForCategory(category) {
+  return NO_1KG_CATEGORIES.includes(category)
+    ? WEIGHT_OPTIONS.filter(w => w !== '1kg')
+    : WEIGHT_OPTIONS;
+}
+
 export default function ProductForm({ initialData = null, rawMaterials = [] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -52,6 +65,11 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Switching into a no-1kg category clears any 1kg selection so it can't
+    // be silently resurrected by switching back to a category that allows it.
+    if (name === 'category' && NO_1KG_CATEGORIES.includes(value)) {
+      setVariants(prev => ({ ...prev, '1kg': { enabled: false, price: '', mrp: '' } }));
+    }
   };
 
   const toggleVariant = (weight) => {
@@ -78,7 +96,7 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
     e.preventDefault();
     setError(null);
 
-    const selectedVariants = WEIGHT_OPTIONS
+    const selectedVariants = allowedWeightsForCategory(formData.category)
       .filter(w => variants[w].enabled)
       .map(w => {
         const price = Number(variants[w].price);
@@ -87,7 +105,7 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
       });
 
     if (selectedVariants.length === 0) {
-      setError('Offer at least one package size (250g / 500g / 1kg).');
+      setError(`Offer at least one package size (${allowedWeightsForCategory(formData.category).join(' / ')}).`);
       return;
     }
     if (selectedVariants.some(v => !v.price || v.price <= 0)) {
@@ -191,7 +209,7 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
           <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MRP (₹, optional)</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {WEIGHT_OPTIONS.map((weight, idx) => {
+          {(() => { const allowedWeights = allowedWeightsForCategory(formData.category); return allowedWeights.map((weight, idx) => {
             const v = variants[weight];
             return (
               <div
@@ -202,7 +220,7 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
                   gap: '16px',
                   alignItems: 'center',
                   padding: '12px',
-                  borderBottom: idx < WEIGHT_OPTIONS.length - 1 ? '1px solid #eee' : 'none',
+                  borderBottom: idx < allowedWeights.length - 1 ? '1px solid #eee' : 'none',
                   opacity: v.enabled ? 1 : 0.6
                 }}
               >
@@ -228,11 +246,12 @@ export default function ProductForm({ initialData = null, rawMaterials = [] }) {
               />
             </div>
             );
-          })}
+          }); })()}
         </div>
       </div>
       <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '8px', marginBottom: '24px' }}>
         Check off every size this product is sold in on the storefront, with its own price. All sizes draw from the one stock total below.
+        {NO_1KG_CATEGORIES.includes(formData.category) && ' (1kg isn’t offered for Badi, Sweets, or Namkeen — it doesn’t pack or ship well.)'}
       </p>
 
       <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '8px' }}>

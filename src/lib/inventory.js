@@ -1,10 +1,12 @@
-import Product from './models/Product';
-import StockMovement from './models/StockMovement';
-import { gramsForWeight } from './weight';
+import Product from './models/Product.js';
+import StockMovement from './models/StockMovement.js';
+import { gramsForWeight } from './weight.js';
 
-// Below this many grams remaining, a product shows up as "low stock" in the
-// dashboard, reports, and the WhatsApp low-stock alert. 5kg — adjust to taste.
-export const LOW_STOCK_THRESHOLD_GRAMS = 5000;
+// Re-exported here so existing server-side imports (`from '../lib/inventory'`)
+// keep working unchanged. The actual value lives in its own mongoose-free
+// file — see lib/stockThreshold.js for why — and any Client Component
+// should import it from there directly instead of from this file.
+export { LOW_STOCK_THRESHOLD_GRAMS } from './stockThreshold.js';
 
 // Adjusts a product's total stock pool (in grams) and records the movement
 // for audit purposes. `changeGrams` is signed: negative removes stock,
