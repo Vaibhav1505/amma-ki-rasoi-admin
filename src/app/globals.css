@@ -41,11 +41,12 @@ body {
   width: 250px;
   background-color: var(--sidebar-chestnut);
   color: var(--surface-white);
-  padding: 24px 0;
+  padding: 24px 0 0;
   display: flex;
   flex-direction: column;
   position: fixed;
   height: 100vh;
+  overflow: hidden; /* header and footer stay put; only .sidebar-nav scrolls */
 }
 
 .sidebar-header {
@@ -55,12 +56,38 @@ body {
   font-size: 1.25rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
+/* Scrolls on its own once the nav list outgrows the viewport (more modules
+   will be added over time), while the logo above and the account footer
+   below stay fixed in place. min-height: 0 is what lets a flex child
+   actually shrink and scroll instead of overflowing its parent. */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255,255,255,0.35);
 }
 
 .nav-item {
@@ -80,6 +107,102 @@ body {
   border-left: 4px solid var(--primary-terracotta);
 }
 
+/* Sidebar footer: date, notification bell, account, and logout — moved
+   here from the old topbar (see Sidebar.js). flex-shrink: 0 keeps it
+   pinned at its natural size below the scrollable .sidebar-nav, so it's
+   always visible instead of getting pushed off the bottom of the
+   viewport as more nav items are added. */
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background-color: rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.sidebar-footer-date {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+  font-family: var(--font-data);
+}
+
+.sidebar-footer-bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: rgba(255,255,255,0.6);
+  flex-shrink: 0;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-footer-bell:hover {
+  background-color: rgba(255,255,255,0.08);
+  color: var(--surface-white);
+}
+
+/* Name and Logout sit side by side in one row instead of stacked. */
+.sidebar-footer-user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+
+.sidebar-footer-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; /* lets the username ellipsize instead of pushing Logout out */
+  flex: 1;
+}
+
+.sidebar-footer-logout {
+  flex-shrink: 0;
+}
+
+.sidebar-avatar {
+  background-color: var(--primary-terracotta);
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.sidebar-username {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--surface-white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-footer-logout button {
+  white-space: nowrap;
+}
+
 .main-content {
   flex: 1;
   margin-left: 250px;
@@ -88,26 +211,10 @@ body {
   flex-direction: column;
 }
 
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-cream);
-}
-
 .page-title {
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 700;
-}
-
-.user-info {
-  display: flex;
-  gap: 16px;
-  color: var(--text-muted);
-  font-weight: 500;
 }
 
 /* Typography Helpers */
@@ -220,6 +327,90 @@ th {
   border-color: var(--primary-terracotta);
 }
 
+/* Messages module — inbox list rows and the sanitized-HTML message body */
+.message-row {
+  display: grid;
+  grid-template-columns: 18px 200px 1fr 140px auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  text-decoration: none;
+  color: var(--text-charcoal);
+  border-bottom: 1px solid var(--border-cream);
+  transition: background-color 0.15s;
+}
+
+.message-row:last-child {
+  border-bottom: none;
+}
+
+.message-row:hover {
+  background-color: #F4F0E6;
+}
+
+.message-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary-terracotta);
+  justify-self: center;
+}
+
+.message-row-from {
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-row-subject {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-row-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Which configured mailbox/channel a message came from — only matters
+   once there's more than one (see EMAIL_ACCOUNTS in lib/mail.js), but the
+   badge is there from day one so adding the next account or a WhatsApp
+   feed later doesn't require touching this file again. Used both in the
+   inbox list grid and, standalone, in the message detail header. */
+.message-row-account {
+  justify-self: start;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary-terracotta);
+  background-color: rgba(193,68,14,0.1);
+  padding: 2px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* Wraps sanitized email HTML (see lib/mail.js) — resets a few properties
+   emails commonly set inline so a message doesn't fight the dashboard's
+   own layout (full-bleed images, huge inherited font sizes, etc). */
+.message-body-html {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.message-body-html img {
+  max-width: 100%;
+  height: auto;
+}
+
+.message-body-html table {
+  max-width: 100%;
+}
+
 /* --- PRINT STYLES --- */
 @media print {
   @page { margin: 0; size: auto; }
@@ -227,7 +418,7 @@ th {
     background-color: white;
     color: black;
   }
-  .sidebar, .topbar, .btn, .no-print {
+  .sidebar, .btn, .no-print {
     display: none !important;
   }
   .main-content {

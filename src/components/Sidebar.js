@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Package, ShoppingBag, Wheat, Building2, Users, Truck, Printer,
-  Wallet, BarChart3, PartyPopper, Megaphone, Settings
+  Wallet, BarChart3, PartyPopper, Megaphone, Settings, Bell, Mail
 } from 'lucide-react';
+import LogoutButton from '@/components/LogoutButton';
 
 const navLinks = [
   { href: '/',              label: 'Home',          icon: Home },
   { href: '/orders',        label: 'Orders',        icon: Package },
+  { href: '/messages',      label: 'Messages',      icon: Mail },
   { href: '/products',      label: 'Products',      icon: ShoppingBag },
   { href: '/raw-materials', label: 'Raw Materials', icon: Wheat },
   { href: '/suppliers',     label: 'Suppliers',     icon: Building2 },
@@ -23,7 +25,7 @@ const navLinks = [
   { href: '/settings',      label: 'Settings',      icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ username, currentDate }) {
   const pathname = usePathname();
 
   const isActive = (href) => {
@@ -50,6 +52,27 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
+
+      {/* Moved here from the old topbar: date, notifications, account, and
+          logout all live in the sidebar now instead of a separate header
+          row, since the sidebar already carries the brand identity. */}
+      {username && (
+        <div className="sidebar-footer">
+          <div className="sidebar-footer-row">
+            <span className="sidebar-footer-date">{currentDate}</span>
+            <Bell size={13} strokeWidth={2} className="sidebar-footer-bell" />
+          </div>
+          <div className="sidebar-footer-user">
+            <div className="sidebar-footer-identity">
+              <span className="sidebar-avatar">{username.charAt(0).toUpperCase()}</span>
+              <span className="sidebar-username">{username}</span>
+            </div>
+            <div className="sidebar-footer-logout">
+              <LogoutButton />
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

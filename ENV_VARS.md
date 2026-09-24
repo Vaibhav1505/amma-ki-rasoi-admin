@@ -49,18 +49,33 @@ can't send it).
 | `WHATSAPP_API_KEY` | API key/token from that provider. |
 | `WHATSAPP_PHONE_NUMBER_ID` | The WhatsApp Business phone number ID to send from. |
 
-## Optional — storefront, new-order email alerts
+## Optional — email (order alerts + admin inbox), shared across both apps
 
-Sends a plain-text email to the business every time a customer completes
-checkout (`src/lib/orderNotification.js`). Without these, checkout works
-exactly the same — the order still saves, stock still decrements — it just
-skips sending the email and logs a warning.
+One Gmail account (`ammakirasoi.support@gmail.com` currently), used two ways:
+
+- **storefront** sends a plain-text "new order" alert to the business on
+  every checkout (`src/lib/orderNotification.js` in `amma_ki_rasoi`)
+- **admin** reads that same inbox, read-only, for the Messages module
+  (`src/lib/mail.js` in this repo)
+
+Both apps need their own copy of `SMTP_EMAIL` / `SMTP_APP_PASSWORD` in
+their own `.env.local` — same two values in both files. It's one Gmail App
+Password authenticating two different things: SMTP (send, storefront) and
+IMAP (read, admin) both work with the same App Password on the same
+account, so there's nothing extra to generate for the admin side — just
+copy the storefront's existing values into this repo's `.env.local` too.
+
+Without these: storefront checkout still works exactly the same — the
+order still saves, stock still decrements — it just skips sending the
+alert email and logs a warning. Admin's Messages page shows a "couldn't
+load the inbox" card instead of a working inbox; nothing else in the admin
+app is affected.
 
 | Variable | What it is |
 |---|---|
-| `SMTP_EMAIL` | The Gmail address the alert is sent **from**, authenticated via Gmail SMTP. Needs a Google "App Password" (not the real account password) — turn on 2-Step Verification, then generate one at https://myaccount.google.com/apppasswords. |
+| `SMTP_EMAIL` | The Gmail address — sent **from** (storefront) and read **from** (admin). Needs a Google "App Password" (not the real account password) — turn on 2-Step Verification, then generate one at https://myaccount.google.com/apppasswords. |
 | `SMTP_APP_PASSWORD` | That 16-character App Password. |
-| `ORDER_ALERT_EMAIL` | The inbox alerts get sent **to**. Defaults to `SMTP_EMAIL` if unset (i.e. the account emails itself). Currently `ammakirasoi.support@gmail.com` — a placeholder inbox until there's a real business email. |
+| `ORDER_ALERT_EMAIL` | Storefront only. The inbox order alerts get sent **to**. Defaults to `SMTP_EMAIL` if unset (i.e. the account emails itself). |
 
 ## Set automatically — not yours to configure
 
