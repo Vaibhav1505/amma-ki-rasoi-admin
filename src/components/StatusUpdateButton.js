@@ -67,9 +67,19 @@ export default function StatusUpdateButton({ orderId, currentStatus }) {
       }
 
       setShowDialog(false);
+      setSelectedStatus(null);
+      setReason('');
       router.refresh();
     } catch (err) {
       setError(err.message);
+    } finally {
+      // Runs on both success and failure. Previously this only reset on
+      // the catch path, so `loading` stayed stuck `true` after every
+      // successful update — router.refresh() re-renders the server-side
+      // status badge/timeline just fine, but it doesn't reset this
+      // component's own React state, so both dialog buttons (disabled
+      // while loading) stayed dead for the *next* status change until a
+      // full page reload remounted the component with fresh state.
       setLoading(false);
     }
   };

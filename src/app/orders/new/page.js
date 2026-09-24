@@ -157,8 +157,8 @@ export default function NewOrderPage() {
                 <thead>
                   <tr>
                     <th>Product</th>
-                    <th>Description</th>
-                    <th style={{ width: '70px' }}>Qty</th>
+                    <th style={{ width: '110px' }}>Weight</th>
+                    <th style={{ width: '90px' }}>Qty</th>
                     <th style={{ width: '110px' }}>Unit Price (₹)</th>
                     <th style={{ width: '90px' }}>Total</th>
                     <th style={{ width: '40px' }}></th>
@@ -184,14 +184,32 @@ export default function NewOrderPage() {
                               </option>
                             ))}
                           </select>
+                          {/* Only a catalog pick sets item.product — once it's
+                              set, the dropdown's own label already carries the
+                              name, so there's nothing left to type here. This
+                              box exists only for "Custom item" rows, where
+                              there's no catalog entry to pull a name from. */}
+                          {!item.product && (
+                            <input
+                              required
+                              value={item.productName}
+                              onChange={(e) => handleItemChange(idx, 'productName', e.target.value)}
+                              style={{ ...inputStyle, padding: '8px 10px', marginTop: '6px' }}
+                              placeholder="Item name, e.g. Aam Ka Achaar"
+                            />
+                          )}
                         </td>
                         <td>
                           <input
-                            required
-                            value={item.productName}
-                            onChange={(e) => handleItemChange(idx, 'productName', e.target.value)}
-                            style={{ ...inputStyle, padding: '8px 10px' }}
-                            placeholder="e.g. Aam Ka Achaar (500g)"
+                            value={item.weight}
+                            onChange={(e) => handleItemChange(idx, 'weight', e.target.value)}
+                            readOnly={Boolean(item.product)}
+                            style={{
+                              ...inputStyle, padding: '8px 10px',
+                              backgroundColor: item.product ? '#F4F0E6' : undefined,
+                              cursor: item.product ? 'default' : 'text'
+                            }}
+                            placeholder="e.g. 500g"
                           />
                         </td>
                         <td>
@@ -199,7 +217,7 @@ export default function NewOrderPage() {
                             type="number" min="1"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                            style={{ ...inputStyle, padding: '8px 10px' }}
+                            style={{ ...inputStyle, padding: '8px 6px', textAlign: 'center' }}
                           />
                           {insufficientStock && (
                             <div style={{ fontSize: '0.7rem', color: 'var(--danger-red)', marginTop: '4px' }}>Only {formatKg(linkedProduct.stockGrams)}kg available</div>
